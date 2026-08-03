@@ -1,0 +1,95 @@
+name: Release
+
+# Releases are cut from version tags only. (No workflow_dispatch: without a tag the GitHub Release
+# step has no tag to publish and would fail.)
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release and push the Pages branch
+    # Secrets mapped to env so the optional steps can guard on presence (skip, not fail, when unset).
+    env:
+      CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
+      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+
+      # The tag must match the package version so the artifacts are labelled correctly.
+      - name: Verify tag matches version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          test "$tag" = "$VERSION" || { echo "Tag v$tag != package.json $VERSION"; exit 1; }
+
+      # Don't publish a release from a red commit (the tag and CI run concurrently otherwise).
+      - name: Lint, type-check & test
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run test
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Package zip
+        run: (cd dist && zip -qr "../google-country-$VERSION.zip" .)
+
+      # .crx + updates.xml — only when a signing key is configured.
+      - name: Sign .crx + updates.xml
+        if: env.CRX_PRIVATE_KEY != ''
+        run: |
+          printf '%s' "$CRX_PRIVATE_KEY" > key.pem
+          crx_url="https://jmerhar.github.io/${GITHUB_REPOSITORY#*/}/google-country.crx"
+          node scripts/pack-crx.mjs --key key.pem --url "$crx_url"
+          mkdir -p pages
+          cp "google-country-$VERSION.crx" pages/google-country.crx
+          cp updates.xml pages/updates.xml
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # Missing globs (e.g. no .crx when the key is absent) are skipped, not fatal.
+          files: |
+            google-country-*.zip
+            google-country-*.crx
+            updates.xml
+          generate_release_notes: true
+
+      # Serve the crx + updates.xml at a stable URL for Kiwi/enterprise auto-update.
+      # Requires GitHub Pages to be enabled for this repo (source: gh-pages branch).
+      - name: Publish crx + updates.xml to GitHub Pages
+        if: env.CRX_PRIVATE_KEY != ''
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./pages
+          keep_files: true
+
+      # Chrome Web Store — only when ALL CWS API credentials are configured (guarding on one would
+      # let a half-configured setup fail the job after the Release was already published).
+      - name: Publish to Chrome Web Store
+        if: env.CWS_CLIENT_ID != '' && env.CWS_CLIENT_SECRET != '' && env.CWS_REFRESH_TOKEN != '' && env.CWS_EXTENSION_ID != ''
+        uses: mnao305/chrome-extension-upload@v5.0.0
+        with:
+          file-path: google-country-${{ env.VERSION }}.zip
+          extension-id: ${{ env.CWS_EXTENSION_ID }}
+          client-id: ${{ env.CWS_CLIENT_ID }}
+          client-secret: ${{ env.CWS_CLIENT_SECRET }}
+          refresh-token: ${{ env.CWS_REFRESH_TOKEN }}

@@ -1,0 +1,165 @@
+/*
+ * Styling for the injected country widget. Aims to sit unobtrusively in the Google results header
+ * (inline anchor) and to remain usable as a fixed pill when no inline anchor is found. Tuned to read
+ * as native-ish: system/Roboto/arial stack, subtle border + shadow, and a light/dark palette driven
+ * by prefers-color-scheme. Custom properties keep the two themes in one place.
+ */
+.gco-root {
+  --gco-bg: #fff;
+  --gco-fg: #202124;
+  --gco-muted: #5f6368;
+  --gco-border: #dadce0;
+  --gco-hover: #f1f3f4;
+  --gco-accent: #1a73e8;
+  --gco-shadow: 0 2px 10px rgba(32, 33, 36, 0.18);
+
+  position: relative;
+  display: inline-block;
+  margin: 6px 8px;
+  font-family: Roboto, arial, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--gco-fg);
+  z-index: 2147483000;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gco-root {
+    --gco-bg: #202124;
+    --gco-fg: #e8eaed;
+    --gco-muted: #9aa0a6;
+    --gco-border: #5f6368;
+    --gco-hover: #303134;
+    --gco-accent: #8ab4f8;
+    --gco-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Fixed fallback: used when no inline anchor is found on the page. */
+.gco-root.gco-fixed {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+}
+
+.gco-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  padding: 6px 10px;
+  background: var(--gco-bg);
+  color: var(--gco-fg);
+  border: 1px solid var(--gco-border);
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+}
+.gco-pill:hover { background: var(--gco-hover); }
+.gco-pill .gco-label {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gco-pill .gco-caret { color: var(--gco-muted); font-size: 11px; }
+
+.gco-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 320px;
+  max-width: 90vw;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  background: var(--gco-bg);
+  border: 1px solid var(--gco-border);
+  border-radius: 12px;
+  box-shadow: var(--gco-shadow);
+  overflow: hidden;
+}
+.gco-root.gco-fixed .gco-panel { left: auto; right: 0; }
+.gco-panel[hidden] { display: none; }
+
+.gco-filter {
+  margin: 10px;
+  padding: 8px 10px;
+  background: var(--gco-bg);
+  color: var(--gco-fg);
+  border: 1px solid var(--gco-border);
+  border-radius: 8px;
+  font: inherit;
+}
+.gco-filter:focus { outline: none; border-color: var(--gco-accent); }
+
+.gco-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 6px 6px;
+}
+
+.gco-section {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gco-muted);
+}
+
+.gco-item {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+.gco-item:hover { background: var(--gco-hover); }
+
+.gco-choose,
+.gco-auto {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gco-auto { border-radius: 8px; width: 100%; }
+.gco-auto:hover { background: var(--gco-hover); }
+
+.gco-flag { font-size: 18px; min-width: 22px; text-align: center; }
+.gco-name { flex: 1; }
+.gco-code { color: var(--gco-muted); font-size: 12px; }
+
+.gco-star {
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  color: var(--gco-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+.gco-star.gco-fav { color: #f9ab00; }
+
+.gco-strict {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--gco-border);
+  color: var(--gco-muted);
+  font-size: 13px;
+}
+
+/* Larger tap targets on touch/mobile (e.g. Kiwi on Android). */
+@media (pointer: coarse) {
+  .gco-pill { padding: 9px 14px; }
+  .gco-choose, .gco-auto, .gco-star { padding: 12px 12px; }
+  .gco-panel { width: 92vw; }
+}

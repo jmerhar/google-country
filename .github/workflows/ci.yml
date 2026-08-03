@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # contents: read for checkout; statuses: write to link the published coverage report.
+    permissions:
+      contents: read
+      statuses: write
+    # Exposed for the publish steps' `if:` guard so they skip (not fail) when the secret is absent.
+    env:
+      COVERAGE_PAGES_TOKEN: ${{ secrets.COVERAGE_PAGES_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint & type-check
+        run: |
+          npm run lint
+          npm run typecheck
+
+      - name: Test with coverage
+        run: npx vitest run --coverage
+
+      - name: Coverage summary
+        run: python3 scripts/coverage-report.py --format md >> "$GITHUB_STEP_SUMMARY"
+
+      # Informational, never fails the build.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: Coverage gate
+        run: python3 scripts/coverage-report.py --gate
+
+      - name: Build extension
+        run: npm run build
+
+      # Publish the HTML report to the shared jmerhar/coverage site — only on green pushes to main
+      # and only while the token exists.
+      - name: Collect coverage upload
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
+        run: scripts/collect-coverage.sh coverage-upload
+      - name: Check out the coverage repo
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: jmerhar/coverage
+          token: ${{ secrets.COVERAGE_PAGES_TOKEN }}
+          path: coverage-repo
+      - name: Publish coverage report
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
+        run: |
+          coverage-repo/bin/add-report.sh \
+            --repo coverage-repo \
+            --project google-country \
+            --sha "$GITHUB_SHA" \
+            --message "$(git log -1 --pretty=%s)" \
+            --commit-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" \
+            --report-dir coverage-upload
+      - name: Link coverage report from the commit
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -f state=success -f context="coverage/report" \
+            -f description="HTML coverage report" \
+            -f target_url="https://jmerhar.github.io/coverage/google-country/$GITHUB_SHA/"

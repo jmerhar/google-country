@@ -1,0 +1,12 @@
+# Codecov is informational only — the real gate is scripts/coverage-report.py --gate in CI.
+# Uploads use the CODECOV_TOKEN repo secret (tokenless upload is unreliable for this repo).
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment: false

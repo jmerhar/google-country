@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Google Country Override",
+  "version": "0.0.0",
+  "description": "Search Google as if from another country (gl/cr) while keeping your language fixed (hl). Pick any country, pin favourites.",
+  "permissions": ["storage", "declarativeNetRequest"],
+  "host_permissions": [],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": [],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": { "default_title": "Google Country Override" }
+}
