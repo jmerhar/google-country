@@ -31,6 +31,7 @@ main { max-width: 960px; margin: 0 auto; padding: 0 24px; }
 .btn { display: inline-block; padding: 12px 22px; border-radius: 999px; border: 1px solid var(--border); color: var(--fg); font-weight: 500; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn:hover { text-decoration: none; filter: brightness(1.05); }
+.dl-note { margin-top: 14px; font-size: 13px; color: var(--muted); }
 
 .shot { margin: 36px 0; }
 .shot img { width: 100%; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .12); }

@@ -35,7 +35,8 @@ was already serving you keeps the experience in your language regardless of the 
 
 ### From a release zip (desktop, Load unpacked)
 
-1. Download `google-country-<version>.zip` from the [Releases](../../releases) page and unzip it.
+1. Download the ZIP — latest stable link: <https://jmerhar.github.io/google-country/google-country.zip>
+   (or a specific version from the [Releases](../../releases) page) — and unzip it.
 2. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the
    unzipped folder.
 
@@ -45,9 +46,10 @@ Once published, install in one click from the store listing (auto-updates). *(Li
 
 ### `.crx` (Kiwi / enterprise)
 
-Each release also ships a signed `google-country-<version>.crx` and an `updates.xml`. Modern desktop
-Chrome blocks `.crx` installs from outside the Web Store, so this path is mainly for **Kiwi Browser
-on Android** and enterprise force-install policies.
+Latest signed crx: <https://jmerhar.github.io/google-country/google-country.crx> (with `updates.xml`
+alongside for auto-update). Modern desktop Chrome blocks `.crx` installs from outside the Web Store,
+so this path is mainly for **Kiwi Browser on Android** and enterprise force-install policies. The
+[landing page](https://jmerhar.github.io/google-country/) links both downloads directly.
 
 ### Kiwi Browser (Android)
 
