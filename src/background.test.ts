@@ -87,4 +87,16 @@ describe("listeners", () => {
     mock.listeners.changed[0]!({}, "sync"); // triggers a resync
     await vi.waitFor(() => expect(dnr).toHaveBeenCalled());
   });
+
+  it("re-syncs and responds on a syncRule message", async () => {
+    const { mock } = await loadBackground(OVERRIDE);
+    expect(mock.listeners.messages).toHaveLength(1);
+    const dnr = mock.chrome.declarativeNetRequest.updateDynamicRules as ReturnType<typeof vi.fn>;
+    dnr.mockClear();
+    const sendResponse = vi.fn();
+    const kept = mock.listeners.messages[0]!({ type: "syncRule" }, {}, sendResponse);
+    expect(kept).toBe(true); // channel kept open for the async response
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith(true));
+    expect(dnr).toHaveBeenCalled();
+  });
 });

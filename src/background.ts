@@ -63,3 +63,14 @@ chrome.runtime.onStartup.addListener(() => void syncRule());
 chrome.storage.onChanged.addListener((_changes, area) => {
   if (area === "sync") void syncRule();
 });
+
+// The content script awaits this before navigating on a selection, so the rule is updated (or
+// removed, when clearing to Auto) *before* the navigation — otherwise a still-active rule would
+// re-redirect the clean Auto URL back to the overridden country.
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if ((message as { type?: string }).type === "syncRule") {
+    void syncRule().then(() => sendResponse(true));
+    return true; // keep the message channel open for the async response
+  }
+  return undefined;
+});

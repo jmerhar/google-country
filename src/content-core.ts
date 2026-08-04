@@ -70,6 +70,14 @@ export async function applyOverride(
 ): Promise<void> {
   const lang = await ensureLang(loc, doc, nav);
   await patchState({ override });
+  // Have the service worker rebuild/remove its DNR rule before navigating, so clearing to Auto isn't
+  // immediately re-redirected by a still-active rule. Best-effort: the SW may be unavailable (Kiwi),
+  // where there's no DNR rule to race anyway.
+  try {
+    await chrome.runtime?.sendMessage?.({ type: "syncRule" });
+  } catch {
+    /* no receiver / service worker unavailable — the content-script fallback covers stickiness */
+  }
   loc.assign(applyToUrl(loc.href, desiredParams(override, lang)));
 }
 

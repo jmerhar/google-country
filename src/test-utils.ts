@@ -8,7 +8,7 @@ type Listener = (...args: unknown[]) => void;
 export interface ChromeMock {
   store: Record<string, unknown>;
   dnrCalls: unknown[];
-  listeners: { changed: Listener[]; installed: Listener[]; startup: Listener[] };
+  listeners: { changed: Listener[]; installed: Listener[]; startup: Listener[]; messages: Listener[] };
   chrome: typeof chrome;
 }
 
@@ -18,6 +18,7 @@ export function installChromeMock(initial: Record<string, unknown> = {}): Chrome
   const changed: Listener[] = [];
   const installed: Listener[] = [];
   const startup: Listener[] = [];
+  const messages: Listener[] = [];
   const dnrCalls: unknown[] = [];
 
   const fake = {
@@ -42,6 +43,8 @@ export function installChromeMock(initial: Record<string, unknown> = {}): Chrome
     runtime: {
       onInstalled: { addListener: (cb: Listener) => installed.push(cb) },
       onStartup: { addListener: (cb: Listener) => startup.push(cb) },
+      onMessage: { addListener: (cb: Listener) => messages.push(cb) },
+      sendMessage: vi.fn(async () => true),
     },
     declarativeNetRequest: {
       updateDynamicRules: vi.fn(async (opts: unknown) => void dnrCalls.push(opts)),
@@ -52,7 +55,7 @@ export function installChromeMock(initial: Record<string, unknown> = {}): Chrome
   return {
     store,
     dnrCalls,
-    listeners: { changed, installed, startup },
+    listeners: { changed, installed, startup, messages },
     chrome: fake as unknown as typeof chrome,
   };
 }

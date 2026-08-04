@@ -80,9 +80,10 @@ describe("ensureLang", () => {
 });
 
 describe("applyOverride", () => {
-  it("stores the override and navigates with gl+hl", async () => {
+  it("stores the override, syncs the SW rule, and navigates with gl+hl", async () => {
     await applyOverride({ code: "JP", strict: false }, loc as unknown as Location);
     expect(mock.store.override).toEqual({ code: "JP", strict: false });
+    expect(mock.chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "syncRule" });
     const target = new URL(loc.assign.mock.calls[0]![0] as string);
     expect(target.searchParams.get("gl")).toBe("jp");
     expect(target.searchParams.get("hl")).toBe("en");

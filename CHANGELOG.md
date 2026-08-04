@@ -8,6 +8,14 @@ Add an entry under a new `## [x.y.z]` heading **before** cutting a release — t
 publishes that section as the GitHub Release notes, and `make release` refuses to tag a version with
 no changelog entry.
 
+## [0.1.4] - 2026-08-04
+
+### Fixed
+- Selecting **Auto (my location)** now reliably clears the country. Previously a race with the
+  removal of the network redirect rule could re-apply the previous country to the cleared page, so
+  after switching result tabs you could still see that country's results. The content script now
+  waits for the service worker to update the rule before navigating.
+
 ## [0.1.3] - 2026-08-04
 
 ### Changed
