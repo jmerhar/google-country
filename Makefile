@@ -46,8 +46,9 @@ zip: build ## Package dist/ into google-country-<version>.zip (Load unpacked / K
 crx: build ## Sign dist/ into a .crx + updates.xml (usage: make crx [KEY=secrets/key.pem])
 	node scripts/pack-crx.mjs --key $(or $(KEY),secrets/key.pem)
 
-cws-publish: zip ## Upload + publish the zip to the Chrome Web Store (uses secrets/ + cws.json)
-	node scripts/cws-publish.mjs "google-country-$(shell node -p "require('./package.json').version").zip"
+cws-publish: build ## Upload + publish the signed store crx (no update_url) to the Chrome Web Store
+	node scripts/pack-crx.mjs --key secrets/key.pem --no-update --out cws-upload.crx
+	node scripts/cws-publish.mjs cws-upload.crx
 
 keygen: ## Generate the crx signing key once → secrets/key.pem (never committed)
 	@test ! -f secrets/key.pem || { echo "secrets/key.pem exists — refusing to overwrite"; exit 1; }

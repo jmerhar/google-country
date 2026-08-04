@@ -25,10 +25,14 @@ function arg(name, fallback) {
 
 const keyPath = arg("key", "secrets/key.pem");
 const { version } = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
-const crxPath = join(ROOT, `google-country-${version}.crx`);
+const crxPath = arg("out", join(ROOT, `google-country-${version}.crx`));
 const xmlPath = join(ROOT, "updates.xml");
 // The stable URL Chrome/Kiwi fetch the crx from for auto-update; override per release as needed.
 const crxURL = arg("url", process.env.CRX_URL || "https://jmerhar.github.io/google-country/google-country.crx");
+// --no-update builds the store crx: no update_url and no updates.xml. The Chrome Web Store manages
+// updates itself (and its guidance is to omit update_url), so the crx uploaded for Verified CRX
+// uploads must not carry one. The default (self-hosted) crx does get an update_url + updates.xml.
+const noUpdate = process.argv.includes("--no-update");
 
 if (!existsSync(join(ROOT, "dist", "manifest.json"))) {
   console.error("dist/manifest.json not found — run `npm run build` first.");
@@ -39,14 +43,14 @@ if (!existsSync(keyPath)) {
   process.exit(1);
 }
 
-// Inject the self-hosted auto-update URL into the crx's manifest so Chrome/Kiwi poll updates.xml.
-// This is intentionally NOT in the base dist/ manifest (and thus not in the store zip): the Web
-// Store manages updates itself and its guidance is to omit update_url from store packages.
-const updateUrl = crxURL.replace(/[^/]*$/, "updates.xml");
 const manifestPath = "dist/manifest.json";
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-manifest.update_url = updateUrl;
+const updateUrl = crxURL.replace(/[^/]*$/, "updates.xml");
+if (noUpdate) delete manifest.update_url;
+else manifest.update_url = updateUrl;
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 
-await crx3(["dist/manifest.json"], { keyPath, crxPath, xmlPath, crxURL });
-console.log(`Packed ${crxPath}\nWrote  ${xmlPath} (codebase ${crxURL}, update_url ${updateUrl})`);
+await crx3(["dist/manifest.json"], noUpdate ? { keyPath, crxPath } : { keyPath, crxPath, xmlPath, crxURL });
+console.log(noUpdate
+  ? `Packed ${crxPath} (store crx, no update_url)`
+  : `Packed ${crxPath}\nWrote  ${xmlPath} (codebase ${crxURL}, update_url ${updateUrl})`);

@@ -69,21 +69,20 @@ data to anyone. See the privacy policy for details.
 
 - **Privacy policy URL:** `https://jmerhar.github.io/google-country/privacy.html`
 
-## Updates
+## Updates & Verified CRX uploads
 
-- **Store users** update through the Chrome Web Store automatically. We upload the **zip** (via
-  `scripts/cws-publish.mjs`); the store re-signs it and manages updates — the store package must
-  **not** contain a self-hosted `update_url`.
-- **Self-hosted / Kiwi users** (the `.crx`) auto-update via the `update_url` baked into the crx by
-  `scripts/pack-crx.mjs`, which points at `updates.xml` on GitHub Pages.
+This item uses **Verified CRX uploads**, so the release builds **two** crx from the same key:
 
-### Verified CRX uploads (optional, not currently used)
+- **Store crx** (`cws-upload.crx`, `pack-crx --no-update`): **no `update_url`**. Uploaded by
+  `scripts/cws-publish.mjs`; the store verifies the signature against the registered public key, then
+  re-signs and manages updates. Store users update through the Web Store automatically.
+- **Self-hosted crx** (`google-country-<version>.crx`): **with `update_url`** → `updates.xml` on
+  GitHub Pages. Attached to the GitHub release and served on Pages so Kiwi/self-hosted installs
+  auto-update.
 
-Opting in would require every store upload to be a `.crx` signed with your key. It's incompatible
-with the single-artifact flow above (the store crx would then also need to be built *without* the
-self-hosted `update_url`), so it's left off. If you want it later, add a store-specific crx build
-(no `update_url`) and switch `cws-publish` back to uploading that crx; the public key to register is
-`openssl rsa -in secrets/key.pem -pubout -outform DER | base64`.
+The public key registered for verified uploads is
+`openssl rsa -in secrets/key.pem -pubout -outform DER | base64`. Keep `secrets/key.pem` backed up —
+losing it means a support ticket to reset verified uploads.
 
 ## Additional fields
 

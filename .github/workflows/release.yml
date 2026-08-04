@@ -52,12 +52,16 @@ jobs:
       - name: Package zip
         run: (cd dist && zip -qr "../google-country-$VERSION.zip" .)
 
-      # .crx + updates.xml — only when a signing key is configured. The crx's stable auto-update URL
-      # points at GitHub Pages; the Pages workflow serves the crx there (triggered by this release).
-      - name: Sign .crx + updates.xml
+      # Two signed crx (only when a signing key is configured), both signed with the same key:
+      #  - cws-upload.crx: NO update_url, for the Verified CRX upload to the Web Store (store-managed
+      #    updates). Built first, from the clean dist.
+      #  - google-country-<version>.crx (+ updates.xml): WITH update_url, for the GitHub release +
+      #    Pages so self-hosted/Kiwi installs auto-update. Built second (it mutates dist's manifest).
+      - name: Sign crx variants
         if: env.CRX_PRIVATE_KEY != ''
         run: |
           printf '%s' "$CRX_PRIVATE_KEY" > key.pem
+          node scripts/pack-crx.mjs --key key.pem --no-update --out cws-upload.crx
           crx_url="https://jmerhar.github.io/${GITHUB_REPOSITORY#*/}/google-country.crx"
           node scripts/pack-crx.mjs --key key.pem --url "$crx_url"
 
@@ -65,17 +69,17 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body_path: RELEASE_NOTES.md
-          # Missing globs (e.g. no .crx when the key is absent) are skipped, not fatal.
+          # Only the versioned self-hosted crx is attached; cws-upload.crx is store-only, and this
+          # glob doesn't match it. Missing globs (no crx when the key is absent) are skipped.
           files: |
             google-country-*.zip
             google-country-*.crx
             updates.xml
 
-      # Chrome Web Store — uploads the zip (the store re-signs and manages updates; the store package
-      # must not carry a self-hosted update_url). Non-fatal: the GitHub Release and Pages deploy have
-      # already succeeded, so a store-side issue (auth, or the item locked while in review) is
-      # surfaced without failing the release.
+      # Chrome Web Store — uploads the signed store crx (no update_url) for Verified CRX uploads.
+      # Non-fatal: the GitHub Release and Pages deploy have already succeeded, so a store-side issue
+      # (auth, or the item locked while in review) is surfaced without failing the release.
       - name: Publish to Chrome Web Store
-        if: env.CWS_SERVICE_ACCOUNT_KEY != ''
+        if: env.CWS_SERVICE_ACCOUNT_KEY != '' && env.CRX_PRIVATE_KEY != ''
         continue-on-error: true
-        run: node scripts/cws-publish.mjs "google-country-$VERSION.zip"
+        run: node scripts/cws-publish.mjs cws-upload.crx
