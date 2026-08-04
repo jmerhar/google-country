@@ -1,14 +1,17 @@
 name: Pages
 
 # Deploys the promotional site (home / privacy / support) to GitHub Pages, and bundles the latest
-# release's crx + updates.xml so the auto-update URL stays stable. Runs on content changes (push to
-# main) and after a release is published (to pick up the new crx). Pages source must be "GitHub
-# Actions".
+# release's downloads (zip, crx, updates.xml) so the direct links + auto-update URL stay current.
+# Runs on content changes (push to main) and — crucially — after the Release workflow finishes, so
+# it picks up the just-published version. (A release created by GITHUB_TOKEN does not fire the
+# `release` event, so we depend on the Release run via workflow_run instead.) Pages source must be
+# "GitHub Actions".
 on:
   push:
     branches: [main]
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   workflow_dispatch: {}
 
 # One concurrent deployment; let an in-progress run finish.
@@ -19,6 +22,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # On a Release-triggered run, only deploy if the release actually succeeded.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
