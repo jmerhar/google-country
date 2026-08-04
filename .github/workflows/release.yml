@@ -71,11 +71,11 @@ jobs:
             google-country-*.crx
             updates.xml
 
-      # Chrome Web Store — uploads the signed .crx (Verified CRX uploads). Needs the CWS service
-      # account + item ID and the signing key (to produce the crx). Non-fatal: the GitHub Release and
-      # Pages deploy have already succeeded by this point, so a store-side issue (auth, review state)
-      # is surfaced as a failed step without marking the whole release red.
+      # Chrome Web Store — uploads the zip (the store re-signs and manages updates; the store package
+      # must not carry a self-hosted update_url). Non-fatal: the GitHub Release and Pages deploy have
+      # already succeeded, so a store-side issue (auth, or the item locked while in review) is
+      # surfaced without failing the release.
       - name: Publish to Chrome Web Store
-        if: env.CWS_SERVICE_ACCOUNT_KEY != '' && env.CRX_PRIVATE_KEY != ''
+        if: env.CWS_SERVICE_ACCOUNT_KEY != ''
         continue-on-error: true
-        run: node scripts/cws-publish.mjs "google-country-$VERSION.crx"
+        run: node scripts/cws-publish.mjs "google-country-$VERSION.zip"

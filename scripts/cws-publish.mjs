@@ -20,11 +20,12 @@
  * Endpoints: uses the v2 `publishers/{id}` endpoints when a publisher ID is set (cws.json, or the
  * CWS_PUBLISHER_ID override), else the legacy v1.1 API. (v1 is supported until 2026-10-15.)
  *
- * Package: uploads the signed `.crx` (signed with CRX_PRIVATE_KEY), which is what "Verified CRX
- * uploads" requires. The store verifies the signature against the registered public key, then
- * re-signs with its own key for distribution (the extension ID is unchanged).
+ * Package: uploads the ZIP. The Web Store re-signs and manages updates, so the store package must
+ * not carry a self-hosted `update_url` — hence we upload the plain zip here, while the self-hosted
+ * crx (served on Pages for Kiwi) is the one that gets an `update_url`. (If you later opt into
+ * Verified CRX uploads, switch this to a signed crx built without an `update_url`.)
  *
- * Usage: node scripts/cws-publish.mjs <path-to.crx>
+ * Usage: node scripts/cws-publish.mjs <path-to.zip>
  */
 import { createSign } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -44,7 +45,7 @@ const keyFile = process.env.CWS_SERVICE_ACCOUNT_KEY_FILE || join(ROOT, "secrets"
 const keyJson = process.env.CWS_SERVICE_ACCOUNT_KEY || (existsSync(keyFile) ? readFileSync(keyFile, "utf8") : "");
 
 const pkgPath = process.argv[2];
-if (!pkgPath) fail("usage: cws-publish.mjs <path-to.crx>");
+if (!pkgPath) fail("usage: cws-publish.mjs <path-to.zip>");
 if (!keyJson) fail("no service-account key (set CWS_SERVICE_ACCOUNT_KEY or add secrets/cws-service-account.json)");
 if (!extensionId) fail("no extension id (set cws.json extensionId or CWS_EXTENSION_ID)");
 

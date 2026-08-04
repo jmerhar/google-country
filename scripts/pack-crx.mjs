@@ -12,7 +12,7 @@
  * the .crx + updates.xml are mainly for Kiwi and enterprise-policy/manual installs.
  */
 import crx3 from "crx3";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -39,5 +39,14 @@ if (!existsSync(keyPath)) {
   process.exit(1);
 }
 
+// Inject the self-hosted auto-update URL into the crx's manifest so Chrome/Kiwi poll updates.xml.
+// This is intentionally NOT in the base dist/ manifest (and thus not in the store zip): the Web
+// Store manages updates itself and its guidance is to omit update_url from store packages.
+const updateUrl = crxURL.replace(/[^/]*$/, "updates.xml");
+const manifestPath = "dist/manifest.json";
+const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+manifest.update_url = updateUrl;
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+
 await crx3(["dist/manifest.json"], { keyPath, crxPath, xmlPath, crxURL });
-console.log(`Packed ${crxPath}\nWrote  ${xmlPath} (codebase ${crxURL})`);
+console.log(`Packed ${crxPath}\nWrote  ${xmlPath} (codebase ${crxURL}, update_url ${updateUrl})`);

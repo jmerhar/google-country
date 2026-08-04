@@ -69,26 +69,21 @@ data to anyone. See the privacy policy for details.
 
 - **Privacy policy URL:** `https://jmerhar.github.io/google-country/privacy.html`
 
-## Package tab — Verified CRX uploads (optional, recommended)
+## Updates
 
-Opting in requires every future upload to be a `.crx` signed with a key you control (the store still
-re-signs with its own key for distribution, so the item ID is unchanged). Our release already signs
-the `.crx` with `CRX_PRIVATE_KEY`, and `scripts/cws-publish.mjs` uploads that signed `.crx`.
+- **Store users** update through the Chrome Web Store automatically. We upload the **zip** (via
+  `scripts/cws-publish.mjs`); the store re-signs it and manages updates — the store package must
+  **not** contain a self-hosted `update_url`.
+- **Self-hosted / Kiwi users** (the `.crx`) auto-update via the `update_url` baked into the crx by
+  `scripts/pack-crx.mjs`, which points at `updates.xml` on GitHub Pages.
 
-1. Get the public key from your signing key (`secrets/key.pem`):
-   ```
-   openssl rsa -in secrets/key.pem -pubout -outform DER 2>/dev/null | base64 | tr -d '\n'
-   ```
-   (Or the PEM form: `openssl rsa -in secrets/key.pem -pubout`.)
-2. **Package** tab → **Verified CRX uploads → Opt in** → paste that public key. If it instead asks
-   for a signed CRX, upload `google-country-<version>.crx` from the latest GitHub release (it's
-   signed with the same key).
-3. From now on, uploads must be the signed `.crx`:
-   - **Manual:** upload `google-country-<version>.crx` from the release.
-   - **CI:** already handled — the release workflow uploads the signed `.crx` once the CWS secrets
-     are set.
+### Verified CRX uploads (optional, not currently used)
 
-Keep `secrets/key.pem` backed up: losing it means a support ticket (up to ~a week) to reset verified uploads.
+Opting in would require every store upload to be a `.crx` signed with your key. It's incompatible
+with the single-artifact flow above (the store crx would then also need to be built *without* the
+self-hosted `update_url`), so it's left off. If you want it later, add a store-specific crx build
+(no `update_url`) and switch `cws-publish` back to uploading that crx; the public key to register is
+`openssl rsa -in secrets/key.pem -pubout -outform DER | base64`.
 
 ## Additional fields
 

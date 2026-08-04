@@ -8,6 +8,15 @@ Add an entry under a new `## [x.y.z]` heading **before** cutting a release — t
 publishes that section as the GitHub Release notes, and `make release` refuses to tag a version with
 no changelog entry.
 
+## [0.1.5] - 2026-08-04
+
+### Fixed
+- The self-hosted `.crx` now includes an `update_url`, so Kiwi/Chrome can auto-update it and the
+  **Update** button works. Previously a manually-installed crx had no update source and never
+  updated. (The store package keeps *no* `update_url` — the Web Store manages those updates.)
+  Note: because the build you already have installed has no `update_url`, install this version's crx
+  once manually; updates after that are automatic.
+
 ## [0.1.4] - 2026-08-04
 
 ### Fixed
