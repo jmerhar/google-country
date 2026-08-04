@@ -111,7 +111,7 @@ const ASSETS = [
     h: 128,
     html: frame(128, 128, "transparent", `
       <div style="width:128px;height:128px;display:flex;align-items:center;justify-content:center">
-        <div style="width:112px;height:112px;border-radius:26px;background:linear-gradient(135deg,${BLUE},${BLUE2});display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(26,115,232,.4)">
+        <div style="width:112px;height:112px;border-radius:26px;background:linear-gradient(135deg,${BLUE},${BLUE2});display:flex;align-items:center;justify-content:center">
           ${globe(80)}
         </div>
       </div>`),

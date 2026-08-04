@@ -1,0 +1,57 @@
+name: Pages
+
+# Deploys the promotional site (home / privacy / support) to GitHub Pages, and bundles the latest
+# release's crx + updates.xml so the auto-update URL stays stable. Runs on content changes (push to
+# main) and after a release is published (to pick up the new crx). Pages source must be "GitHub
+# Actions".
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch: {}
+
+# One concurrent deployment; let an in-progress run finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build site
+        run: node scripts/build-site.mjs
+
+      # Serve the latest release's crx + updates.xml from the site root (stable auto-update URL).
+      # Ignored on the very first deploy if no release has a crx yet.
+      - name: Add release crx + updates.xml
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --pattern '*.crx' --pattern 'updates.xml' -D site-dist || echo "no crx assets yet"
+          if ls site-dist/google-country-*.crx >/dev/null 2>&1; then
+            mv site-dist/google-country-*.crx site-dist/google-country.crx
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

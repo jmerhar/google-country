@@ -54,16 +54,14 @@ jobs:
       - name: Package zip
         run: (cd dist && zip -qr "../google-country-$VERSION.zip" .)
 
-      # .crx + updates.xml — only when a signing key is configured.
+      # .crx + updates.xml — only when a signing key is configured. The crx's stable auto-update URL
+      # points at GitHub Pages; the Pages workflow serves the crx there (triggered by this release).
       - name: Sign .crx + updates.xml
         if: env.CRX_PRIVATE_KEY != ''
         run: |
           printf '%s' "$CRX_PRIVATE_KEY" > key.pem
           crx_url="https://jmerhar.github.io/${GITHUB_REPOSITORY#*/}/google-country.crx"
           node scripts/pack-crx.mjs --key key.pem --url "$crx_url"
-          mkdir -p pages
-          cp "google-country-$VERSION.crx" pages/google-country.crx
-          cp updates.xml pages/updates.xml
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -74,16 +72,6 @@ jobs:
             google-country-*.zip
             google-country-*.crx
             updates.xml
-
-      # Serve the crx + updates.xml at a stable URL for Kiwi/enterprise auto-update.
-      # Requires GitHub Pages to be enabled for this repo (source: gh-pages branch).
-      - name: Publish crx + updates.xml to GitHub Pages
-        if: env.CRX_PRIVATE_KEY != ''
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./pages
-          keep_files: true
 
       # Chrome Web Store — only when the service-account key + item ID are configured.
       - name: Publish to Chrome Web Store

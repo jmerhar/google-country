@@ -56,6 +56,9 @@ icons: ## Regenerate the placeholder PNG app icons in src/icons/
 store-assets: ## Render the Chrome Web Store listing images into store/ (needs Chrome + sips)
 	node scripts/gen-store-assets.mjs
 
+site: ## Build the GitHub Pages promo/privacy/support site into site-dist/
+	node scripts/build-site.mjs
+
 release: ## Bump version, tag vX.Y.Z, push to trigger the release workflow (usage: make release VERSION=1.2.3)
 	@test -n "$(VERSION)" || { echo "Usage: make release VERSION=1.2.3"; exit 1; }
 	@grep -q "^## \[$(VERSION)\]" CHANGELOG.md || { echo "Add a CHANGELOG.md '## [$(VERSION)]' entry before releasing"; exit 1; }

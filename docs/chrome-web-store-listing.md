@@ -67,12 +67,12 @@ data to anyone. See the privacy policy for details.
 - **Certify all three disclosures:** ✅ do not sell/transfer data; ✅ no use unrelated to the single
   purpose; ✅ not used for creditworthiness/lending.
 
-- **Privacy policy URL:** `https://github.com/jmerhar/google-country/blob/main/PRIVACY.md`
+- **Privacy policy URL:** `https://jmerhar.github.io/google-country/privacy.html`
 
 ## Additional fields
 
 - **Official URL:** None (unless you verify domain ownership in Search Console).
-- **Homepage URL:** `https://github.com/jmerhar/google-country`
-- **Support URL:** `https://github.com/jmerhar/google-country/issues`
+- **Homepage URL:** `https://jmerhar.github.io/google-country/`
+- **Support URL:** `https://jmerhar.github.io/google-country/support.html`
 - **Mature content:** off.
 - **Item support (visibility):** Public (or Unlisted for a soft launch).
