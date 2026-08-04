@@ -22,15 +22,6 @@ import { COUNTRIES, countryByCode, flagEmoji } from "./countries";
 
 export const ROOT_ID = "gco-root";
 
-/** Selectors tried in order for a seamless inline anchor near the top of the results page. */
-const ANCHOR_SELECTORS = [
-  "#hdtb-msb", // desktop tools/filters bar
-  "#top_nav", // mobile tabs bar
-  "form[action='/search']",
-  "#tsf",
-  "#search",
-];
-
 /* --------------------------------- state --------------------------------- */
 
 async function getState(): Promise<State> {
@@ -240,24 +231,31 @@ export function buildWidget(state: State): HTMLElement {
 
 /* -------------------------------- mounting ------------------------------- */
 
-/** Pick the insertion point: a seamless inline anchor if found, else a fixed-position fallback. */
-export function findAnchor(doc: Document = document): { host: Element; inline: boolean } {
-  for (const sel of ANCHOR_SELECTORS) {
-    const el = doc.querySelector(sel);
-    if (el) return { host: el, inline: true };
-  }
-  return { host: doc.body, inline: false };
+/**
+ * Whether to render the dark palette. Google's dark mode is a site setting independent of the OS
+ * `prefers-color-scheme`, so we can't rely on a media query — we sample the page's actual background
+ * luminance instead, falling back to the OS preference only when the background is transparent.
+ */
+export function detectDark(doc: Document = document): boolean {
+  const bg = getComputedStyle(doc.body ?? doc.documentElement).backgroundColor;
+  const m = bg.match(/rgba?\(([^)]+)\)/);
+  if (!m) return false;
+  const [r = 255, g = 255, b = 255, a = 1] = m[1].split(",").map((n) => parseFloat(n));
+  if (a === 0) return globalThis.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
 }
 
-/** Inject the widget once. Returns the root (existing or new); idempotent by `ROOT_ID`. */
+/**
+ * Inject the widget once as a fixed-position pill. Idempotent by `ROOT_ID`. A fixed overlay is used
+ * rather than splicing into Google's results header: the header's markup is unstable and injecting
+ * into it reflows/breaks the layout, whereas a fixed pill is reliable across desktop and mobile.
+ */
 export function mount(state: State, doc: Document = document): HTMLElement {
   const existing = doc.getElementById(ROOT_ID);
   if (existing) return existing;
-  const { host, inline } = findAnchor(doc);
   const root = buildWidget(state);
-  if (!inline) root.classList.add("gco-fixed");
-  if (inline) host.insertBefore(root, host.firstChild);
-  else host.appendChild(root);
+  root.classList.add("gco-fixed", detectDark(doc) ? "gco-dark" : "gco-light");
+  (doc.body ?? doc.documentElement).appendChild(root);
   return root;
 }
 

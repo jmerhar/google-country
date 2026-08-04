@@ -14,10 +14,9 @@ jobs:
     # Secrets mapped to env so the optional steps can guard on presence (skip, not fail, when unset).
     env:
       CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
-      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
-      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
-      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+      CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
       CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+      CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -37,6 +36,10 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME#v}"
           test "$tag" = "$VERSION" || { echo "Tag v$tag != package.json $VERSION"; exit 1; }
+
+      # Release notes come from the CHANGELOG section for this version (fails if missing).
+      - name: Extract release notes
+        run: node scripts/release-notes.mjs "$VERSION" > RELEASE_NOTES.md
 
       # Don't publish a release from a red commit (the tag and CI run concurrently otherwise).
       - name: Lint, type-check & test
@@ -65,12 +68,12 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: RELEASE_NOTES.md
           # Missing globs (e.g. no .crx when the key is absent) are skipped, not fatal.
           files: |
             google-country-*.zip
             google-country-*.crx
             updates.xml
-          generate_release_notes: true
 
       # Serve the crx + updates.xml at a stable URL for Kiwi/enterprise auto-update.
       # Requires GitHub Pages to be enabled for this repo (source: gh-pages branch).
@@ -82,14 +85,7 @@ jobs:
           publish_dir: ./pages
           keep_files: true
 
-      # Chrome Web Store — only when ALL CWS API credentials are configured (guarding on one would
-      # let a half-configured setup fail the job after the Release was already published).
+      # Chrome Web Store — only when the service-account key + item ID are configured.
       - name: Publish to Chrome Web Store
-        if: env.CWS_CLIENT_ID != '' && env.CWS_CLIENT_SECRET != '' && env.CWS_REFRESH_TOKEN != '' && env.CWS_EXTENSION_ID != ''
-        uses: mnao305/chrome-extension-upload@v5.0.0
-        with:
-          file-path: google-country-${{ env.VERSION }}.zip
-          extension-id: ${{ env.CWS_EXTENSION_ID }}
-          client-id: ${{ env.CWS_CLIENT_ID }}
-          client-secret: ${{ env.CWS_CLIENT_SECRET }}
-          refresh-token: ${{ env.CWS_REFRESH_TOKEN }}
+        if: env.CWS_SERVICE_ACCOUNT_KEY != '' && env.CWS_EXTENSION_ID != ''
+        run: node scripts/cws-publish.mjs "google-country-$VERSION.zip"

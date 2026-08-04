@@ -1,5 +1,10 @@
 # Google Country Override
 
+[![CI](https://github.com/jmerhar/google-country/actions/workflows/ci.yml/badge.svg)](https://github.com/jmerhar/google-country/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/jmerhar/google-country/branch/main/graph/badge.svg)](https://app.codecov.io/gh/jmerhar/google-country)
+[![Release](https://img.shields.io/github/v/release/jmerhar/google-country?sort=semver)](https://github.com/jmerhar/google-country/releases)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
 A Chrome/Chromium extension that adds a country dropdown to the Google search results page so you
 can search **as if you were in another country** — without changing your language. Pick any country,
 pin favourites to the top, and the choice sticks across searches until you change it.
@@ -83,24 +88,27 @@ green pushes to `main`, publishes the HTML report to the shared `jmerhar/coverag
 
 ## Releasing
 
-Releases are cut from version tags:
+1. Add a `## [x.y.z]` section to [`CHANGELOG.md`](CHANGELOG.md) describing the changes (this becomes
+   the GitHub Release body; `make release` refuses to tag a version with no changelog entry).
+2. Cut the release:
 
 ```
 make keygen                 # once: generate key.pem, then store it as the CRX_PRIVATE_KEY secret
 make release VERSION=1.2.3  # bump package.json, tag v1.2.3, and push (triggers the release workflow)
 ```
 
-The **Release** workflow builds `dist/` and produces a **zip**, a signed **`.crx` + `updates.xml`**
-(when `CRX_PRIVATE_KEY` is set), attaches them to a GitHub Release, publishes the crx/updates.xml to
-GitHub Pages, and uploads to the **Chrome Web Store** (when the CWS secrets are set).
+The **Release** workflow re-runs lint/type-check/tests, builds `dist/`, then produces a **zip**, a
+signed **`.crx` + `updates.xml`** (when `CRX_PRIVATE_KEY` is set), attaches them to a GitHub Release
+with the changelog notes, publishes the crx/updates.xml to GitHub Pages, and publishes to the
+**Chrome Web Store** via a service account (when its secrets are set).
 
 ### Required secrets
 
 | Secret | Used for |
 |--------|----------|
 | `CODECOV_TOKEN`, `COVERAGE_PAGES_TOKEN` | CI: Codecov upload + coverage-site publish |
-| `CRX_PRIVATE_KEY` | Sign the `.crx` (stable extension ID) |
-| `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN`, `CWS_EXTENSION_ID` | Chrome Web Store publishing |
+| `CRX_PRIVATE_KEY` | Sign the `.crx` (stable extension ID) — keep a backup; it can't be re-read from the secret |
+| `CWS_SERVICE_ACCOUNT_KEY`, `CWS_EXTENSION_ID` | Chrome Web Store publishing (service account). Optionally `CWS_PUBLISHER_ID` to use the v2 API endpoints |
 
 The `.crx` and CWS steps skip cleanly when their secrets are absent, so tagging still ships the zip.
 

@@ -1,8 +1,9 @@
 /*
- * Styling for the injected country widget. Aims to sit unobtrusively in the Google results header
- * (inline anchor) and to remain usable as a fixed pill when no inline anchor is found. Tuned to read
- * as native-ish: system/Roboto/arial stack, subtle border + shadow, and a light/dark palette driven
- * by prefers-color-scheme. Custom properties keep the two themes in one place.
+ * Styling for the injected country widget: a fixed pill anchored to the bottom-right of the results
+ * page, with a panel that opens upward. The palette is driven by an explicit theme class
+ * (.gco-light / .gco-dark) set from the page's actual background — Google's dark mode is a site
+ * setting independent of the OS prefers-color-scheme, so a media query would miss it. Custom
+ * properties keep the two themes in one place.
  */
 .gco-root {
   --gco-bg: #fff;
@@ -11,54 +12,48 @@
   --gco-border: #dadce0;
   --gco-hover: #f1f3f4;
   --gco-accent: #1a73e8;
-  --gco-shadow: 0 2px 10px rgba(32, 33, 36, 0.18);
+  --gco-shadow: 0 4px 14px rgba(32, 33, 36, 0.22);
 
-  position: relative;
-  display: inline-block;
-  margin: 6px 8px;
   font-family: Roboto, arial, system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.2;
   color: var(--gco-fg);
-  z-index: 2147483000;
 }
 
-@media (prefers-color-scheme: dark) {
-  .gco-root {
-    --gco-bg: #202124;
-    --gco-fg: #e8eaed;
-    --gco-muted: #9aa0a6;
-    --gco-border: #5f6368;
-    --gco-hover: #303134;
-    --gco-accent: #8ab4f8;
-    --gco-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  }
+.gco-root.gco-dark {
+  --gco-bg: #2d2e30;
+  --gco-fg: #e8eaed;
+  --gco-muted: #9aa0a6;
+  --gco-border: #5f6368;
+  --gco-hover: #3c4043;
+  --gco-accent: #8ab4f8;
+  --gco-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
 }
 
-/* Fixed fallback: used when no inline anchor is found on the page. */
 .gco-root.gco-fixed {
   position: fixed;
-  top: 12px;
-  right: 12px;
-  margin: 0;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483000;
 }
 
 .gco-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  max-width: 220px;
-  padding: 6px 10px;
+  max-width: 240px;
+  padding: 8px 14px;
   background: var(--gco-bg);
   color: var(--gco-fg);
   border: 1px solid var(--gco-border);
   border-radius: 999px;
+  box-shadow: var(--gco-shadow);
   cursor: pointer;
   font: inherit;
 }
 .gco-pill:hover { background: var(--gco-hover); }
 .gco-pill .gco-label {
-  max-width: 150px;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -67,11 +62,11 @@
 
 .gco-panel {
   position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px); /* opens upward from the bottom-anchored pill */
   width: 320px;
-  max-width: 90vw;
-  max-height: 420px;
+  max-width: 92vw;
+  max-height: min(460px, 70vh);
   display: flex;
   flex-direction: column;
   background: var(--gco-bg);
@@ -80,7 +75,6 @@
   box-shadow: var(--gco-shadow);
   overflow: hidden;
 }
-.gco-root.gco-fixed .gco-panel { left: auto; right: 0; }
 .gco-panel[hidden] { display: none; }
 
 .gco-filter {
@@ -159,7 +153,7 @@
 
 /* Larger tap targets on touch/mobile (e.g. Kiwi on Android). */
 @media (pointer: coarse) {
-  .gco-pill { padding: 9px 14px; }
+  .gco-pill { padding: 11px 16px; }
   .gco-choose, .gco-auto, .gco-star { padding: 12px 12px; }
   .gco-panel { width: 92vw; }
 }

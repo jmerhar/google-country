@@ -53,7 +53,11 @@ keygen: ## Generate the crx signing key once → key.pem (stable extension ID; n
 icons: ## Regenerate the placeholder PNG app icons in src/icons/
 	node scripts/gen-icons.mjs
 
+store-assets: ## Render the Chrome Web Store listing images into store/ (needs Chrome + sips)
+	node scripts/gen-store-assets.mjs
+
 release: ## Bump version, tag vX.Y.Z, push to trigger the release workflow (usage: make release VERSION=1.2.3)
 	@test -n "$(VERSION)" || { echo "Usage: make release VERSION=1.2.3"; exit 1; }
+	@grep -q "^## \[$(VERSION)\]" CHANGELOG.md || { echo "Add a CHANGELOG.md '## [$(VERSION)]' entry before releasing"; exit 1; }
 	npm version $(VERSION) --no-git-tag-version
 	git commit -am "chore: release v$(VERSION)" && git tag "v$(VERSION)" && git push && git push --tags

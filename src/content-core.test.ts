@@ -3,9 +3,9 @@ import { installChromeMock, stubLocation, tick, type ChromeMock, type LocationMo
 import {
   applyOverride,
   buildWidget,
+  detectDark,
   ensureLang,
   enforceSticky,
-  findAnchor,
   mount,
   renderList,
   ROOT_ID,
@@ -25,6 +25,7 @@ function state(over: Partial<State> = {}): State {
 
 beforeEach(() => {
   document.body.innerHTML = "";
+  document.body.style.backgroundColor = "";
   document.documentElement.lang = "";
   mock = installChromeMock({ override: null, favourites: [], lang: "en" });
   loc = stubLocation(SEARCH);
@@ -200,25 +201,29 @@ describe("buildWidget", () => {
   });
 });
 
-describe("findAnchor & mount", () => {
-  it("prefers a known inline anchor", () => {
-    document.body.innerHTML = '<div id="search"></div>';
-    expect(findAnchor().inline).toBe(true);
+describe("detectDark", () => {
+  it("reports dark for a dark page background and light for a light one", () => {
+    document.body.style.backgroundColor = "rgb(32, 33, 36)";
+    expect(detectDark()).toBe(true);
+    document.body.style.backgroundColor = "rgb(255, 255, 255)";
+    expect(detectDark()).toBe(false);
   });
+});
 
-  it("falls back to the body as a fixed pill", () => {
-    const anchor = findAnchor();
-    expect(anchor.inline).toBe(false);
-    expect(anchor.host).toBe(document.body);
-  });
-
-  it("injects once and is idempotent", () => {
+describe("mount", () => {
+  it("injects once as a fixed pill on the body and is idempotent", () => {
     const first = mount(state());
     expect(document.getElementById(ROOT_ID)).toBe(first);
-    expect(first.classList.contains("gco-fixed")).toBe(true); // no inline anchor → fixed
+    expect(first.classList.contains("gco-fixed")).toBe(true);
+    expect(first.parentElement).toBe(document.body);
     const second = mount(state());
     expect(second).toBe(first);
     expect(document.querySelectorAll(`#${ROOT_ID}`)).toHaveLength(1);
+  });
+
+  it("applies the detected theme class", () => {
+    document.body.style.backgroundColor = "rgb(20, 20, 20)";
+    expect(mount(state()).classList.contains("gco-dark")).toBe(true);
   });
 });
 
