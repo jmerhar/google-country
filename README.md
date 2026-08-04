@@ -112,6 +112,13 @@ with the changelog notes, publishes the crx/updates.xml to GitHub Pages, and pub
 
 The `.crx` and CWS steps skip cleanly when their secrets are absent, so tagging still ships the zip.
 
+### Running secret-dependent targets locally
+
+Most `make` targets need no secrets. For the one that does — `make cws-publish` — copy
+`.env.example` to `.env` (git-ignored) and fill it in; the Makefile auto-loads and exports it, so
+nothing needs to be exported by hand. The service-account JSON is referenced by path
+(`CWS_SERVICE_ACCOUNT_KEY_FILE`, e.g. under `secrets/`, also git-ignored) rather than pasted inline.
+
 ## License
 
 GPL-3.0-or-later.

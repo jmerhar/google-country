@@ -1,4 +1,9 @@
-.PHONY: help install dev lint test test-watch coverage check build clean zip crx keygen icons release
+.PHONY: help install dev lint test test-watch coverage check build clean zip crx keygen icons store-assets site cws-publish release
+
+# Load local secrets (git-ignored) and export them so targets that need credentials work without
+# anyone exporting anything by hand. Copy .env.example to .env to get started. Absent → ignored.
+-include .env
+export
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*##|^##@' $(MAKEFILE_LIST) | \
@@ -45,6 +50,9 @@ zip: build ## Package dist/ into google-country-<version>.zip (Load unpacked / K
 
 crx: build ## Sign dist/ into a .crx + updates.xml (usage: make crx [KEY=key.pem])
 	node scripts/pack-crx.mjs --key $(or $(KEY),key.pem)
+
+cws-publish: crx ## Upload + publish the signed crx to the Chrome Web Store (uses .env secrets)
+	node scripts/cws-publish.mjs "google-country-$(shell node -p "require('./package.json').version").crx"
 
 keygen: ## Generate the crx signing key once → key.pem (stable extension ID; never commit)
 	@test ! -f key.pem || { echo "key.pem exists — refusing to overwrite"; exit 1; }

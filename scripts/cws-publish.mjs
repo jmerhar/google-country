@@ -29,12 +29,15 @@ import { createSign } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const pkgPath = process.argv[2];
-const keyJson = process.env.CWS_SERVICE_ACCOUNT_KEY;
+// Key from CWS_SERVICE_ACCOUNT_KEY (JSON, as in CI) or CWS_SERVICE_ACCOUNT_KEY_FILE (a path, handy
+// for local runs so the JSON blob need not live in an env var).
+const keyJson = process.env.CWS_SERVICE_ACCOUNT_KEY
+  || (process.env.CWS_SERVICE_ACCOUNT_KEY_FILE ? readFileSync(process.env.CWS_SERVICE_ACCOUNT_KEY_FILE, "utf8") : "");
 const extensionId = process.env.CWS_EXTENSION_ID;
 const publisherId = process.env.CWS_PUBLISHER_ID; // optional → selects v2 endpoints
 
 if (!pkgPath) fail("usage: cws-publish.mjs <path-to.crx>");
-if (!keyJson) fail("CWS_SERVICE_ACCOUNT_KEY is not set");
+if (!keyJson) fail("set CWS_SERVICE_ACCOUNT_KEY (JSON) or CWS_SERVICE_ACCOUNT_KEY_FILE (path)");
 if (!extensionId) fail("CWS_EXTENSION_ID is not set");
 
 function fail(msg) {
