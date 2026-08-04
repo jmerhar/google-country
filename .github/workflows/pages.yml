@@ -24,9 +24,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build site
-        run: node scripts/build-site.mjs
+        run: npm run site
 
       # Serve the latest release's crx + updates.xml from the site root (stable auto-update URL).
       # Ignored on the very first deploy if no release has a crx yet.

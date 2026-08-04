@@ -69,6 +69,27 @@ data to anyone. See the privacy policy for details.
 
 - **Privacy policy URL:** `https://jmerhar.github.io/google-country/privacy.html`
 
+## Package tab — Verified CRX uploads (optional, recommended)
+
+Opting in requires every future upload to be a `.crx` signed with a key you control (the store still
+re-signs with its own key for distribution, so the item ID is unchanged). Our release already signs
+the `.crx` with `CRX_PRIVATE_KEY`, and `scripts/cws-publish.mjs` uploads that signed `.crx`.
+
+1. Get the public key from the signing key you generated (`key.pem`):
+   ```
+   openssl rsa -in key.pem -pubout -outform DER 2>/dev/null | base64 | tr -d '\n'
+   ```
+   (Or the PEM form: `openssl rsa -in key.pem -pubout`.)
+2. **Package** tab → **Verified CRX uploads → Opt in** → paste that public key. If it instead asks
+   for a signed CRX, upload `google-country-<version>.crx` from the latest GitHub release (it's
+   signed with the same key).
+3. From now on, uploads must be the signed `.crx`:
+   - **Manual:** upload `google-country-<version>.crx` from the release.
+   - **CI:** already handled — the release workflow uploads the signed `.crx` once the CWS secrets
+     are set.
+
+Keep `key.pem` backed up: losing it means a support ticket (up to ~a week) to reset verified uploads.
+
 ## Additional fields
 
 - **Official URL:** None (unless you verify domain ownership in Search Console).

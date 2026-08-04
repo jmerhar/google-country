@@ -73,7 +73,8 @@ jobs:
             google-country-*.crx
             updates.xml
 
-      # Chrome Web Store — only when the service-account key + item ID are configured.
+      # Chrome Web Store — uploads the signed .crx (Verified CRX uploads). Needs the CWS service
+      # account + item ID and the signing key (to produce the crx).
       - name: Publish to Chrome Web Store
-        if: env.CWS_SERVICE_ACCOUNT_KEY != '' && env.CWS_EXTENSION_ID != ''
-        run: node scripts/cws-publish.mjs "google-country-$VERSION.zip"
+        if: env.CWS_SERVICE_ACCOUNT_KEY != '' && env.CWS_EXTENSION_ID != '' && env.CRX_PRIVATE_KEY != ''
+        run: node scripts/cws-publish.mjs "google-country-$VERSION.crx"

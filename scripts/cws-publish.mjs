@@ -19,17 +19,21 @@
  * v2 `publishers/{id}` endpoints instead. (v1 is supported until 2026-10-15; migrating later is just
  * setting CWS_PUBLISHER_ID.)
  *
- * Usage: node scripts/cws-publish.mjs <path-to.zip>
+ * Package: uploads the signed `.crx` (signed with CRX_PRIVATE_KEY), which is what "Verified CRX
+ * uploads" requires. The store verifies the signature against the registered public key, then
+ * re-signs with its own key for distribution (the extension ID is unchanged).
+ *
+ * Usage: node scripts/cws-publish.mjs <path-to.crx>
  */
 import { createSign } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-const zipPath = process.argv[2];
+const pkgPath = process.argv[2];
 const keyJson = process.env.CWS_SERVICE_ACCOUNT_KEY;
 const extensionId = process.env.CWS_EXTENSION_ID;
 const publisherId = process.env.CWS_PUBLISHER_ID; // optional → selects v2 endpoints
 
-if (!zipPath) fail("usage: cws-publish.mjs <path-to.zip>");
+if (!pkgPath) fail("usage: cws-publish.mjs <path-to.crx>");
 if (!keyJson) fail("CWS_SERVICE_ACCOUNT_KEY is not set");
 if (!extensionId) fail("CWS_EXTENSION_ID is not set");
 
@@ -79,11 +83,11 @@ const endpoints = publisherId
 const token = await accessToken(JSON.parse(keyJson));
 const auth = { Authorization: `Bearer ${token}`, "x-goog-api-version": "2" };
 
-console.log(`Uploading ${zipPath} to ${publisherId ? "v2" : "v1.1"} …`);
+console.log(`Uploading ${pkgPath} to ${publisherId ? "v2" : "v1.1"} …`);
 const upload = await fetch(endpoints.upload, {
   method: publisherId ? "POST" : "PUT",
   headers: auth,
-  body: readFileSync(zipPath),
+  body: readFileSync(pkgPath),
 });
 const uploadBody = await upload.json().catch(() => ({}));
 if (!upload.ok || uploadBody.uploadState === "FAILURE") {

@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "node scripts/build.mjs --watch",
     "build": "node scripts/build.mjs",
+    "site": "vite build --config vite.site.config.mjs",
+    "site:dev": "vite --config vite.site.config.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

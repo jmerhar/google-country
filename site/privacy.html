@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — Google Country Override</title>
+  <meta name="description" content="Google Country Override does not collect any personal data.">
+  <link rel="icon" href="/assets/icon.png">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="index.html"><img src="/assets/icon.png" width="28" height="28" alt=""> Google Country Override</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="support.html">Support</a>
+      <a href="privacy.html" class="on">Privacy</a>
+      <a href="https://github.com/jmerhar/google-country">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <article class="doc">
+      <h1>Privacy Policy</h1>
+      <p class="muted">Last updated: 4 August 2026</p>
+
+      <p><strong>Google Country Override does not collect, transmit, or sell any personal data.</strong></p>
+
+      <h2>What the extension stores</h2>
+      <p>The extension saves only your own settings so it can work across searches:</p>
+      <ul>
+        <li>the country you selected (or “Auto”),</li>
+        <li>whether “Strict” is enabled,</li>
+        <li>your list of favourite countries,</li>
+        <li>the interface language it detected once, so your language stays fixed when you change country.</li>
+      </ul>
+      <p>These settings are stored using Chrome's <code>storage.sync</code> API. They live in your own browser
+      profile and, if you are signed into Chrome, sync across your devices via your Google account. They are
+      never sent to the developer or any third party — the extension has no backend server and makes no
+      analytics or tracking requests.</p>
+
+      <h2>What the extension accesses</h2>
+      <p>The extension runs only on Google Search pages. It reads and adjusts the search URL's query parameters
+      (to apply your chosen country while keeping your language) and injects the country dropdown into the page.
+      It does not read your search results, browsing history, or any page content beyond what is needed to place
+      and operate the dropdown.</p>
+
+      <h2>Permissions</h2>
+      <ul>
+        <li><strong>storage</strong> — save the settings listed above.</li>
+        <li><strong>declarativeNetRequest</strong> — rewrite Google Search request URLs to apply the chosen country.</li>
+        <li><strong>Host access to Google Search domains</strong> — run the dropdown and adjust the search URL on those pages only.</li>
+      </ul>
+
+      <h2>Contact</h2>
+      <p>Questions? Open an issue at
+      <a href="https://github.com/jmerhar/google-country/issues">github.com/jmerhar/google-country/issues</a>.</p>
+    </article>
+  </main>
+
+  <footer>
+    <p>Google Country Override is an independent open-source project and is not affiliated with Google.</p>
+    <p><a href="https://chromewebstore.google.com/detail/bhdgkkgclnmbbgaejncimldlfebalada">Chrome Web Store</a> · <a href="https://github.com/jmerhar/google-country">Source</a> · <a href="privacy.html">Privacy</a> · <a href="support.html">Support</a> · GPL-3.0-or-later</p>
+  </footer>
+</body>
+</html>

@@ -8,6 +8,12 @@ Add an entry under a new `## [x.y.z]` heading **before** cutting a release — t
 publishes that section as the GitHub Release notes, and `make release` refuses to tag a version with
 no changelog entry.
 
+## [0.1.2] - 2026-08-04
+
+### Changed
+- New app icon: a cleaner globe mark (no map marker), used consistently across the extension, the
+  store listing, and the website.
+
 ## [0.1.1] - 2026-08-04
 
 ### Fixed
