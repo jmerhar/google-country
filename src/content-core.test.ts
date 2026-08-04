@@ -97,6 +97,19 @@ describe("applyOverride", () => {
     expect(target.searchParams.has("gl")).toBe(false);
     expect(target.searchParams.has("cr")).toBe(false);
   });
+
+  it("still navigates when the service worker message rejects (e.g. Kiwi)", async () => {
+    (mock.chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("no receiver"));
+    await applyOverride({ code: "JP", strict: false }, loc as unknown as Location);
+    expect(mock.store.override).toEqual({ code: "JP", strict: false });
+    expect(loc.assign).toHaveBeenCalledTimes(1);
+  });
+
+  it("still navigates when there is no sendMessage at all", async () => {
+    (mock.chrome.runtime as { sendMessage?: unknown }).sendMessage = undefined;
+    await applyOverride(null, loc as unknown as Location);
+    expect(loc.assign).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("toggleFavourite", () => {
@@ -148,6 +161,19 @@ describe("buildWidget", () => {
   it("shows the current selection on the pill", () => {
     const { root } = makeWidget({ override: { code: "JP", strict: false } });
     expect(root.querySelector(".gco-label")!.textContent).toBe("Japan");
+  });
+
+  it("labels an unknown override code with the uppercased code", () => {
+    const { root } = makeWidget({ override: { code: "zz", strict: false } });
+    expect(root.querySelector(".gco-label")!.textContent).toBe("ZZ");
+  });
+
+  it("closes the panel on an outside click", () => {
+    const { pill, panel } = makeWidget();
+    pill.click();
+    expect(panel.hasAttribute("hidden")).toBe(false);
+    document.body.click(); // outside the widget
+    expect(panel.hasAttribute("hidden")).toBe(true);
   });
 
   it("toggles the panel open and closed via the pill", () => {
@@ -209,6 +235,17 @@ describe("detectDark", () => {
     document.body.style.backgroundColor = "rgb(255, 255, 255)";
     expect(detectDark()).toBe(false);
   });
+
+  it("falls back to prefers-color-scheme when the background is transparent", () => {
+    document.body.style.backgroundColor = "rgba(0, 0, 0, 0)";
+    vi.stubGlobal("matchMedia", () => ({ matches: true }));
+    expect(detectDark()).toBe(true);
+  });
+
+  it("defaults to light when the background can't be parsed", () => {
+    document.body.style.backgroundColor = "";
+    expect(detectDark()).toBe(false);
+  });
 });
 
 describe("mount", () => {
@@ -233,6 +270,15 @@ describe("runContentScript", () => {
     const observer = await runContentScript();
     if (observer) observers.push(observer);
     await tick();
+    expect(document.getElementById(ROOT_ID)).toBeTruthy();
+  });
+
+  it("re-mounts if the widget root is removed (Google re-render)", async () => {
+    const observer = await runContentScript();
+    if (observer) observers.push(observer);
+    await tick();
+    document.getElementById(ROOT_ID)!.remove();
+    await tick(); // the MutationObserver should re-inject it
     expect(document.getElementById(ROOT_ID)).toBeTruthy();
   });
 

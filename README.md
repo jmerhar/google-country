@@ -42,7 +42,9 @@ was already serving you keeps the experience in your language regardless of the 
 
 ### Chrome Web Store
 
-Once published, install in one click from the store listing (auto-updates). *(Link added when live.)*
+One-click install with auto-updates. The store link — and whether the listing has cleared review
+yet — is shown on the [landing page](https://jmerhar.github.io/google-country/); it's derived from
+`cws.json` (`published`), so the status lives in one place rather than being repeated here.
 
 ### `.crx` (Kiwi / enterprise)
 

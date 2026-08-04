@@ -8,6 +8,15 @@ Add an entry under a new `## [x.y.z]` heading **before** cutting a release — t
 publishes that section as the GitHub Release notes, and `make release` refuses to tag a version with
 no changelog entry.
 
+## [0.1.6] - 2026-08-04
+
+### Fixed
+- The dropdown no longer leaks an outside-click listener when closed via Escape, an outside click, or
+  a Google page re-render.
+- The interface language is now resolved before the sticky override is enforced, so an override
+  whose language hadn't been detected yet (e.g. state synced from another device) can't briefly let
+  Google infer the language from the country.
+
 ## [0.1.5] - 2026-08-04
 
 ### Fixed

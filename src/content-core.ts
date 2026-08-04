@@ -197,21 +197,23 @@ export function buildWidget(state: State): HTMLElement {
 
   renderList(list, state, "");
 
-  const open = (isOpen: boolean) => {
-    panel.toggleAttribute("hidden", !isOpen);
-    pill.setAttribute("aria-expanded", String(isOpen));
-    if (isOpen) filter.focus();
-  };
+  // Dismiss on any click outside the widget. Added/removed inside open() so every close path (pill
+  // toggle, Escape, outside-click) tears the listener down — no leak across opens or re-mounts.
   const onDocClick = (e: Event) => {
     if (!root.contains(e.target as Node)) open(false);
   };
+  const open = (isOpen: boolean) => {
+    panel.toggleAttribute("hidden", !isOpen);
+    pill.setAttribute("aria-expanded", String(isOpen));
+    if (isOpen) {
+      filter.focus();
+      document.addEventListener("click", onDocClick, { capture: true });
+    } else {
+      document.removeEventListener("click", onDocClick, { capture: true });
+    }
+  };
 
-  pill.addEventListener("click", () => {
-    const willOpen = panel.hasAttribute("hidden");
-    open(willOpen);
-    if (willOpen) document.addEventListener("click", onDocClick, { capture: true });
-    else document.removeEventListener("click", onDocClick, { capture: true });
-  });
+  pill.addEventListener("click", () => open(panel.hasAttribute("hidden")));
   panel.addEventListener("keydown", (e) => {
     if ((e as KeyboardEvent).key === "Escape") open(false);
   });
@@ -279,8 +281,11 @@ export function mount(state: State, doc: Document = document): HTMLElement {
  * regardless of exactly when this async bootstrap resolves relative to page parsing.
  */
 export async function runContentScript(): Promise<MutationObserver | undefined> {
-  if (await enforceSticky()) return undefined; // a redirect is underway; the reloaded page will mount.
+  // Detect+persist the language before enforcing, so an override whose language was never resolved
+  // (e.g. state synced from another device) still pins hl on the very first enforced navigation
+  // rather than briefly letting Google infer the language from the country.
   await ensureLang();
+  if (await enforceSticky()) return undefined; // a redirect is underway; the reloaded page will mount.
 
   const state = await getState();
   const tryMount = () => {

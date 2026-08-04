@@ -10,7 +10,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # create the GitHub Release and push the Pages branch
+      contents: write # create the GitHub Release (Pages is deployed by a separate workflow)
     # Only the two real secrets are needed; the item/publisher IDs are committed in cws.json.
     env:
       CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
@@ -77,8 +77,8 @@ jobs:
             updates.xml
 
       # Chrome Web Store — uploads the signed store crx (no update_url) for Verified CRX uploads.
-      # Non-fatal: the GitHub Release and Pages deploy have already succeeded, so a store-side issue
-      # (auth, or the item locked while in review) is surfaced without failing the release.
+      # Non-fatal: the GitHub Release is already created by this point, so a store-side issue (auth,
+      # or the item locked while in review) is surfaced without failing the release.
       - name: Publish to Chrome Web Store
         if: env.CWS_SERVICE_ACCOUNT_KEY != '' && env.CRX_PRIVATE_KEY != ''
         continue-on-error: true

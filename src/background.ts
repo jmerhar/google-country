@@ -69,7 +69,8 @@ chrome.storage.onChanged.addListener((_changes, area) => {
 // re-redirect the clean Auto URL back to the overridden country.
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if ((message as { type?: string }).type === "syncRule") {
-    void syncRule().then(() => sendResponse(true));
+    // Always respond (true on success, false on failure) so the content script's await never hangs.
+    syncRule().then(() => sendResponse(true), () => sendResponse(false));
     return true; // keep the message channel open for the async response
   }
   return undefined;

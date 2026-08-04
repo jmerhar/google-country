@@ -102,13 +102,26 @@ const upload = await fetch(endpoints.upload, {
   body: readFileSync(pkgPath),
 });
 const uploadBody = await upload.json().catch(() => ({}));
-if (!upload.ok || uploadBody.uploadState === "FAILURE") {
-  fail(`upload failed (${upload.status}): ${JSON.stringify(uploadBody)}`);
+// Uploads can fail with HTTP 200 and report it in the body. Treat anything that isn't an explicit
+// success as failure — the state enum differs between APIs (v2: SUCCEEDED/IN_PROGRESS/FAILED/
+// NOT_FOUND; v1.1: SUCCESS/IN_PROGRESS/FAILURE/NOT_FOUND) — and surface any itemError. IN_PROGRESS
+// means the package isn't processed yet, so don't publish on it.
+const uploadState = uploadBody.uploadState;
+const uploadErrors = uploadBody.itemError ?? uploadBody.item_error;
+if (!upload.ok || (uploadState && !["SUCCESS", "SUCCEEDED"].includes(uploadState)) || uploadErrors?.length) {
+  fail(`upload failed (${upload.status}, state ${uploadState ?? "?"}): ${JSON.stringify(uploadBody)}`);
 }
 console.log(`Upload OK: ${JSON.stringify(uploadBody)}`);
 
 console.log("Submitting for review / publishing …");
 const publish = await fetch(endpoints.publish, { method: "POST", headers: auth });
 const publishBody = await publish.json().catch(() => ({}));
-if (!publish.ok) fail(`publish failed (${publish.status}): ${JSON.stringify(publishBody)}`);
+// Publish can also report hard errors in a 200 body; ITEM_PENDING_REVIEW is the normal success.
+const publishStatus = publishBody.status ?? [];
+const publishErrors = publishStatus.filter(
+  (s) => !["OK", "ITEM_PENDING_REVIEW", "PUBLISHED_WITH_FRICTION_WARNING"].includes(s),
+);
+if (!publish.ok || publishErrors.length) {
+  fail(`publish failed (${publish.status}): ${JSON.stringify(publishBody)}`);
+}
 console.log(`Publish requested: ${JSON.stringify(publishBody)}`);

@@ -99,4 +99,23 @@ describe("listeners", () => {
     await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith(true));
     expect(dnr).toHaveBeenCalled();
   });
+
+  it("ignores non-syncRule messages", async () => {
+    const { mock } = await loadBackground(OVERRIDE);
+    const dnr = mock.chrome.declarativeNetRequest.updateDynamicRules as ReturnType<typeof vi.fn>;
+    dnr.mockClear();
+    const sendResponse = vi.fn();
+    expect(mock.listeners.messages[0]!({ type: "other" }, {}, sendResponse)).toBeUndefined();
+    expect(sendResponse).not.toHaveBeenCalled();
+    expect(dnr).not.toHaveBeenCalled();
+  });
+
+  it("responds false when the rule update fails", async () => {
+    const { mock } = await loadBackground(OVERRIDE);
+    (mock.chrome.declarativeNetRequest.updateDynamicRules as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new Error("dnr error"));
+    const sendResponse = vi.fn();
+    mock.listeners.messages[0]!({ type: "syncRule" }, {}, sendResponse);
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith(false));
+  });
 });
