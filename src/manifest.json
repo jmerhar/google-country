@@ -3,7 +3,7 @@
   "name": "Google Country Override",
   "version": "0.0.0",
   "description": "Search Google as if you're in another country while keeping results in your language. Pick any country and pin your favourites.",
-  "permissions": ["storage", "declarativeNetRequest"],
+  "permissions": ["storage", "declarativeNetRequestWithHostAccess"],
   "host_permissions": [],
   "background": { "service_worker": "background.js" },
   "content_scripts": [

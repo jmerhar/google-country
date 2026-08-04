@@ -56,7 +56,7 @@ data to anyone. See the privacy policy for details.
 
 - **Permission justifications:**
   - **storage:** `Stores the user's selected country, the Strict setting, favourite countries, and the detected interface language, so the choice persists across searches and devices.`
-  - **declarativeNetRequest:** `Rewrites the query parameters of Google Search navigations so the chosen country is applied automatically on every search while the interface language is kept fixed.`
+  - **declarativeNetRequestWithHostAccess:** `Rewrites the query parameters of Google Search navigations (only on the Google hosts the extension already has access to) so the chosen country is applied automatically on every search while the interface language is kept fixed.`
   - **Host permission:** `The extension runs only on Google Search domains, where it injects the country dropdown and reads/adjusts the search URL to apply the selected country. No other sites are accessed and no page content is collected.`
 
 - **Are you using remote code?** → **No, I am not using remote code.** (All code is bundled in the package.)

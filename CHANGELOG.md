@@ -8,6 +8,14 @@ Add an entry under a new `## [x.y.z]` heading **before** cutting a release — t
 publishes that section as the GitHub Release notes, and `make release` refuses to tag a version with
 no changelog entry.
 
+## [0.1.3] - 2026-08-04
+
+### Changed
+- Request `declarativeNetRequestWithHostAccess` instead of the broad `declarativeNetRequest`, so the
+  extension no longer asks to "block content on any page" — it only acts on Google Search, which it
+  already has host access to. Removes a scary permission prompt (e.g. on Kiwi) with no loss of
+  functionality.
+
 ## [0.1.2] - 2026-08-04
 
 ### Changed
