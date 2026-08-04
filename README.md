@@ -93,31 +93,34 @@ green pushes to `main`, publishes the HTML report to the shared `jmerhar/coverag
 2. Cut the release:
 
 ```
-make keygen                 # once: generate key.pem, then store it as the CRX_PRIVATE_KEY secret
+make keygen                 # once: writes secrets/key.pem; also store it as the CRX_PRIVATE_KEY secret
 make release VERSION=1.2.3  # bump package.json, tag v1.2.3, and push (triggers the release workflow)
 ```
 
 The **Release** workflow re-runs lint/type-check/tests, builds `dist/`, then produces a **zip**, a
 signed **`.crx` + `updates.xml`** (when `CRX_PRIVATE_KEY` is set), attaches them to a GitHub Release
-with the changelog notes, publishes the crx/updates.xml to GitHub Pages, and publishes to the
-**Chrome Web Store** via a service account (when its secrets are set).
+with the changelog notes, and publishes to the **Chrome Web Store** via a service account (when its
+key is set). The [Pages workflow](.github/workflows/pages.yml) serves the site + the latest crx.
 
-### Required secrets
+### Configuration vs. secrets
 
-| Secret | Used for |
-|--------|----------|
-| `CODECOV_TOKEN`, `COVERAGE_PAGES_TOKEN` | CI: Codecov upload + coverage-site publish |
-| `CRX_PRIVATE_KEY` | Sign the `.crx` (stable extension ID) — keep a backup; it can't be re-read from the secret |
-| `CWS_SERVICE_ACCOUNT_KEY`, `CWS_EXTENSION_ID` | Chrome Web Store publishing (service account). Optionally `CWS_PUBLISHER_ID` to use the v2 API endpoints |
+Non-secret identifiers — the Chrome Web Store **item ID** and **publisher ID** — live in the
+committed [`cws.json`](cws.json) (the single source of truth; the site derives its store URL from
+it). Only two things are actually secret:
+
+| Secret (CI) / local file | Used for |
+|--------------------------|----------|
+| `CRX_PRIVATE_KEY` / `secrets/key.pem` | Sign the `.crx`. Keep a backup — it can't be re-read from the CI secret |
+| `CWS_SERVICE_ACCOUNT_KEY` / `secrets/cws-service-account.json` | Chrome Web Store publishing (service account) |
+| `CODECOV_TOKEN`, `COVERAGE_PAGES_TOKEN` (CI only) | Codecov upload + coverage-site publish |
 
 The `.crx` and CWS steps skip cleanly when their secrets are absent, so tagging still ships the zip.
 
 ### Running secret-dependent targets locally
 
-Most `make` targets need no secrets. For the one that does — `make cws-publish` — copy
-`.env.example` to `.env` (git-ignored) and fill it in; the Makefile auto-loads and exports it, so
-nothing needs to be exported by hand. The service-account JSON is referenced by path
-(`CWS_SERVICE_ACCOUNT_KEY_FILE`, e.g. under `secrets/`, also git-ignored) rather than pasted inline.
+Most `make` targets need no secrets. For the one that does — `make cws-publish` — just drop the two
+files into `secrets/` (git-ignored): `secrets/key.pem` (or `make keygen`) and
+`secrets/cws-service-account.json`. No env vars or exports needed; the IDs come from `cws.json`.
 
 ## License
 

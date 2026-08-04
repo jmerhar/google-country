@@ -11,12 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the GitHub Release and push the Pages branch
-    # Secrets mapped to env so the optional steps can guard on presence (skip, not fail, when unset).
+    # Only the two real secrets are needed; the item/publisher IDs are committed in cws.json.
     env:
       CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
       CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
-      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
-      CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,6 +76,6 @@ jobs:
       # Pages deploy have already succeeded by this point, so a store-side issue (auth, review state)
       # is surfaced as a failed step without marking the whole release red.
       - name: Publish to Chrome Web Store
-        if: env.CWS_SERVICE_ACCOUNT_KEY != '' && env.CWS_EXTENSION_ID != '' && env.CRX_PRIVATE_KEY != ''
+        if: env.CWS_SERVICE_ACCOUNT_KEY != '' && env.CRX_PRIVATE_KEY != ''
         continue-on-error: true
         run: node scripts/cws-publish.mjs "google-country-$VERSION.crx"

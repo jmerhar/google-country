@@ -1,10 +1,5 @@
 .PHONY: help install dev lint test test-watch coverage check build clean zip crx keygen icons store-assets site cws-publish release
 
-# Load local secrets (git-ignored) and export them so targets that need credentials work without
-# anyone exporting anything by hand. Copy .env.example to .env to get started. Absent → ignored.
--include .env
-export
-
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*##|^##@' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*## "}; /^##@/ {printf "\n\033[1m%s\033[0m\n", substr($$0, 5); next} {printf "  \033[36mmake %-16s\033[0m %s\n", $$1, $$2}'
@@ -48,15 +43,16 @@ clean: ## Remove build + coverage + package artifacts (all regenerable)
 zip: build ## Package dist/ into google-country-<version>.zip (Load unpacked / Kiwi / CWS)
 	cd dist && zip -qr ../google-country-$(shell node -p "require('./package.json').version").zip .
 
-crx: build ## Sign dist/ into a .crx + updates.xml (usage: make crx [KEY=key.pem])
-	node scripts/pack-crx.mjs --key $(or $(KEY),key.pem)
+crx: build ## Sign dist/ into a .crx + updates.xml (usage: make crx [KEY=secrets/key.pem])
+	node scripts/pack-crx.mjs --key $(or $(KEY),secrets/key.pem)
 
-cws-publish: crx ## Upload + publish the signed crx to the Chrome Web Store (uses .env secrets)
+cws-publish: crx ## Upload + publish the signed crx to the Chrome Web Store (uses secrets/ + cws.json)
 	node scripts/cws-publish.mjs "google-country-$(shell node -p "require('./package.json').version").crx"
 
-keygen: ## Generate the crx signing key once → key.pem (stable extension ID; never commit)
-	@test ! -f key.pem || { echo "key.pem exists — refusing to overwrite"; exit 1; }
-	openssl genrsa 2048 > key.pem && echo "Wrote key.pem — store as the CRX_PRIVATE_KEY secret; do not commit"
+keygen: ## Generate the crx signing key once → secrets/key.pem (never committed)
+	@test ! -f secrets/key.pem || { echo "secrets/key.pem exists — refusing to overwrite"; exit 1; }
+	@mkdir -p secrets
+	openssl genrsa 2048 > secrets/key.pem && echo "Wrote secrets/key.pem — also store it as the CRX_PRIVATE_KEY secret; keep a backup"
 
 icons: ## Regenerate the placeholder PNG app icons in src/icons/
 	node scripts/gen-icons.mjs

@@ -9,15 +9,16 @@
  *   2. Create a service account and a JSON key for it.
  *   3. Chrome Web Store Developer Dashboard → Account → add the service account's email (this links
  *      it to your publisher account; only one service account per publisher is allowed).
- *   4. Store the JSON key as the CWS_SERVICE_ACCOUNT_KEY secret and the item ID as CWS_EXTENSION_ID.
+ *   4. In CI, store the JSON key as the CWS_SERVICE_ACCOUNT_KEY secret. Locally, place it at
+ *      secrets/cws-service-account.json (git-ignored). The non-secret item/publisher IDs live in the
+ *      committed cws.json.
  *
  * Auth: the service account key self-signs a JWT which is exchanged for an access token scoped to
  * `chromewebstore` — the standard two-legged OAuth flow, implemented here with node:crypto so no
  * extra dependencies or gcloud are needed.
  *
- * Endpoints: defaults to the v1.1 API (no publisher ID needed). If CWS_PUBLISHER_ID is set, uses the
- * v2 `publishers/{id}` endpoints instead. (v1 is supported until 2026-10-15; migrating later is just
- * setting CWS_PUBLISHER_ID.)
+ * Endpoints: uses the v2 `publishers/{id}` endpoints when a publisher ID is set (cws.json, or the
+ * CWS_PUBLISHER_ID override), else the legacy v1.1 API. (v1 is supported until 2026-10-15.)
  *
  * Package: uploads the signed `.crx` (signed with CRX_PRIVATE_KEY), which is what "Verified CRX
  * uploads" requires. The store verifies the signature against the registered public key, then
@@ -26,19 +27,26 @@
  * Usage: node scripts/cws-publish.mjs <path-to.crx>
  */
 import { createSign } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// Non-secret identifiers live in the committed cws.json; env vars override them when set (e.g. CI).
+const cfg = existsSync(join(ROOT, "cws.json")) ? JSON.parse(readFileSync(join(ROOT, "cws.json"), "utf8")) : {};
+const extensionId = process.env.CWS_EXTENSION_ID || cfg.extensionId;
+const publisherId = process.env.CWS_PUBLISHER_ID || cfg.publisherId || undefined; // set → v2 endpoints
+
+// The service-account key is the only secret here: inline JSON (CWS_SERVICE_ACCOUNT_KEY, used in CI),
+// an explicit path (CWS_SERVICE_ACCOUNT_KEY_FILE), or the default secrets/ file for local runs.
+const keyFile = process.env.CWS_SERVICE_ACCOUNT_KEY_FILE || join(ROOT, "secrets", "cws-service-account.json");
+const keyJson = process.env.CWS_SERVICE_ACCOUNT_KEY || (existsSync(keyFile) ? readFileSync(keyFile, "utf8") : "");
 
 const pkgPath = process.argv[2];
-// Key from CWS_SERVICE_ACCOUNT_KEY (JSON, as in CI) or CWS_SERVICE_ACCOUNT_KEY_FILE (a path, handy
-// for local runs so the JSON blob need not live in an env var).
-const keyJson = process.env.CWS_SERVICE_ACCOUNT_KEY
-  || (process.env.CWS_SERVICE_ACCOUNT_KEY_FILE ? readFileSync(process.env.CWS_SERVICE_ACCOUNT_KEY_FILE, "utf8") : "");
-const extensionId = process.env.CWS_EXTENSION_ID;
-const publisherId = process.env.CWS_PUBLISHER_ID; // optional → selects v2 endpoints
-
 if (!pkgPath) fail("usage: cws-publish.mjs <path-to.crx>");
-if (!keyJson) fail("set CWS_SERVICE_ACCOUNT_KEY (JSON) or CWS_SERVICE_ACCOUNT_KEY_FILE (path)");
-if (!extensionId) fail("CWS_EXTENSION_ID is not set");
+if (!keyJson) fail("no service-account key (set CWS_SERVICE_ACCOUNT_KEY or add secrets/cws-service-account.json)");
+if (!extensionId) fail("no extension id (set cws.json extensionId or CWS_EXTENSION_ID)");
 
 function fail(msg) {
   console.error(`cws-publish: ${msg}`);
