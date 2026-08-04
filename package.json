@@ -1,7 +1,7 @@
 {
   "name": "google-country",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "Chrome/Kiwi extension that adds a country override dropdown to Google search results (gl/cr) while keeping your language fixed (hl).",
   "license": "GPL-3.0-or-later",
