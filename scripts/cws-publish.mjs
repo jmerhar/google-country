@@ -29,7 +29,7 @@
  */
 import { createSign } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -95,10 +95,17 @@ const endpoints = publisherId
 const token = await accessToken(JSON.parse(keyJson));
 const auth = { Authorization: `Bearer ${token}`, "x-goog-api-version": "2" };
 
+// The v2 (Verified CRX) upload is a raw media upload: the store only recognizes the body as a crx
+// when told so via the X-Goog-Upload-* headers. Without them it rejects the package with
+// INVALID_PACKAGE / PKG_MUST_UPDATE_AS_CRX ("you must update your item with a crx package").
+const uploadHeaders = publisherId
+  ? { ...auth, "X-Goog-Upload-Protocol": "raw", "X-Goog-Upload-File-Name": basename(pkgPath) }
+  : auth;
+
 console.log(`Uploading ${pkgPath} to ${publisherId ? "v2" : "v1.1"} …`);
 const upload = await fetch(endpoints.upload, {
   method: publisherId ? "POST" : "PUT",
-  headers: auth,
+  headers: uploadHeaders,
   body: readFileSync(pkgPath),
 });
 const uploadBody = await upload.json().catch(() => ({}));
