@@ -37,14 +37,23 @@ jobs:
       - name: Build site
         run: npm run site
 
-      # Serve the latest release's downloads from the site root under stable names, so the site can
-      # link them directly (versioned release-asset names have no stable "latest" URL). Ignored on
-      # the very first deploy if no release exists yet.
+      # Serve this version's release downloads from the site root under stable names, so the site can
+      # link them directly (versioned release-asset names have no stable "latest" URL).
+      #
+      # Download the release matching the checked-out version (v<package.json>), NOT GitHub's "latest"
+      # release: the latest-release flag can lag for minutes right after a release is created, so a
+      # workflow_run/dispatch firing in that window would otherwise bundle the *previous* version's
+      # downloads. Fall back to whatever "latest" resolves to only when this version has no release yet
+      # (e.g. the very first deploy, or a push landing before the Release workflow has published).
       - name: Add release downloads (zip, crx, updates.xml)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download --pattern '*.crx' --pattern '*.zip' --pattern 'updates.xml' -D site-dist || echo "no release assets yet"
+          version="v$(node -p "require('./package.json').version")"
+          patterns=(--pattern '*.crx' --pattern '*.zip' --pattern 'updates.xml')
+          gh release download "$version" "${patterns[@]}" -D site-dist \
+            || gh release download "${patterns[@]}" -D site-dist \
+            || echo "no release assets yet"
           for ext in crx zip; do
             if ls site-dist/google-country-*.$ext >/dev/null 2>&1; then
               mv site-dist/google-country-*.$ext site-dist/google-country.$ext
