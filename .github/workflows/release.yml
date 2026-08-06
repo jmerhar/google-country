@@ -16,9 +16,9 @@ jobs:
       CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
       CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
