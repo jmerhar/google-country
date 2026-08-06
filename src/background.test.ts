@@ -10,7 +10,7 @@ async function loadBackground(initial: Record<string, unknown>) {
   return { mock, bg };
 }
 
-const OVERRIDE = { override: { code: "jp", strict: false }, favourites: [], lang: "en" } satisfies State;
+const OVERRIDE = { override: { code: "jp", strict: false }, favourites: [], lang: "en", hideAds: true } satisfies State;
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -22,7 +22,7 @@ describe("buildRule", () => {
   beforeEach(async () => ({ bg } = await loadBackground({})));
 
   it("returns null in Auto mode", () => {
-    expect(bg.buildRule({ override: null, favourites: [], lang: "en" })).toBeNull();
+    expect(bg.buildRule({ override: null, favourites: [], lang: "en", hideAds: true })).toBeNull();
   });
 
   it("builds a main_frame redirect that pins gl+hl and strips cr when not strict", () => {

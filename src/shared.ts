@@ -19,6 +19,13 @@ export interface State {
   override: Override | null;
   favourites: string[];
   lang: string;
+  /**
+   * Hide Google's sponsored/ad blocks while a country override is active. Ads are served from the
+   * user's real location and ignore `gl`/`cr`, so under an override they'd stay in the wrong country;
+   * hiding them keeps the page consistent with the chosen country. Only takes effect when an override
+   * is set (Auto shows the user's genuine local ads).
+   */
+  hideAds: boolean;
 }
 
 /**
@@ -48,10 +55,12 @@ export const HOST_PERMISSION_PATTERNS = GOOGLE_DOMAINS.map((d) => `*://*.${d}/*`
 /**
  * Default state used before anything is stored, and to fill partial reads. `lang` starts empty
  * ("undetected") rather than "en" so the content script detects the user's real interface language
- * on first run — pinning "en" for a non-English user would itself change their language.
+ * on first run — pinning "en" for a non-English user would itself change their language. `hideAds`
+ * defaults on so the ad/country mismatch is hidden out of the box; users who prefer to see ads can
+ * turn it off in the panel.
  */
 export function defaultState(): State {
-  return { override: null, favourites: [], lang: "" };
+  return { override: null, favourites: [], lang: "", hideAds: true };
 }
 
 /** Reduce an arbitrary language tag to Google's primary subtag, lower-cased (`en-GB` → `en`). */

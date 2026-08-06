@@ -10,43 +10,49 @@
  * `sips` (macOS) flattens the promo tiles to JPEG. Re-run with `make store-assets`.
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as esbuild from "esbuild";
 import { BLUE, BLUE2, frame, globeSvg, iconHtml, renderPng } from "./lib/brand.mjs";
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "store");
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const OUT = join(ROOT, "store");
+const SRC = join(ROOT, "src");
 const TMP = join(OUT, ".tmp");
 
-// The real widget, styled to match src/content.css, for the product screenshot.
+// Render the *real* widget for the screenshot rather than a hand-maintained copy: bundle buildWidget
+// from the content script and run it in the page against the real src/content.css. This way the store
+// screenshot tracks the actual UI (new toggles, restyles, …) automatically and can never drift.
+const contentCss = readFileSync(join(SRC, "content.css"), "utf8");
+const widgetBundle = (
+  await esbuild.build({
+    stdin: {
+      contents: 'import { buildWidget } from "./content-core.ts"; globalThis.gcoBuildWidget = buildWidget;',
+      resolveDir: SRC,
+      loader: "ts",
+    },
+    bundle: true,
+    format: "iife",
+    platform: "browser",
+    write: false,
+    logLevel: "silent",
+  })
+).outputFiles[0].text;
+
+// A representative selection (country chosen, two favourites, panel open), positioned and themed
+// exactly like the live extension via the real stylesheet and class names.
 const widget = () => `
-<style>
- .gco{position:absolute;right:28px;bottom:28px;font-size:14px;color:#202124}
- .pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#fff;border:1px solid #dadce0;border-radius:999px;box-shadow:0 4px 14px rgba(32,33,36,.22)}
- .caret{color:#5f6368;font-size:11px}
- .panel{position:absolute;right:0;bottom:calc(100% + 8px);width:320px;background:#fff;border:1px solid #dadce0;border-radius:12px;box-shadow:0 8px 24px rgba(32,33,36,.28);overflow:hidden}
- .filter{margin:10px;padding:8px 10px;border:1px solid #dadce0;border-radius:8px;color:#5f6368}
- .sec{padding:8px 12px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5f6368}
- .row{display:flex;align-items:center;gap:10px;padding:8px 12px}
- .row:hover{background:#f1f3f4}
- .flag{font-size:18px}
- .name{flex:1}
- .star{color:#f9ab00}
- .strict{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid #dadce0;color:#5f6368;font-size:13px}
-</style>
-<div class="gco">
- <div class="panel">
-  <div class="filter">Search countries…</div>
-  <div class="sec">Favourites</div>
-  <div class="row"><span class="flag">🇯🇵</span><span class="name">Japan</span><span class="star">★</span></div>
-  <div class="row"><span class="flag">🇩🇪</span><span class="name">Germany</span><span class="star">★</span></div>
-  <div class="sec">All countries</div>
-  <div class="row"><span class="flag">🇦🇺</span><span class="name">Australia</span><span style="color:#5f6368">☆</span></div>
-  <div class="row"><span class="flag">🇧🇷</span><span class="name">Brazil</span><span style="color:#5f6368">☆</span></div>
-  <div class="strict"><input type="checkbox"> Strict — only pages from this country</div>
- </div>
- <div class="pill"><span class="flag">🇯🇵</span><span>Japan</span><span class="caret">▾</span></div>
-</div>`;
+<style>${contentCss}</style>
+<script>${widgetBundle}
+(function () {
+  var state = { override: { code: "JP", strict: false }, favourites: ["JP", "DE"], lang: "en", hideAds: true };
+  var root = globalThis.gcoBuildWidget(state);
+  root.classList.add("gco-fixed", "gco-light");
+  root.querySelector(".gco-panel").removeAttribute("hidden");
+  document.body.appendChild(root);
+})();
+</script>`;
 
 // A light mock of a Google results page as a backdrop for the screenshot.
 const resultsMock = () => `

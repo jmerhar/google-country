@@ -92,6 +92,49 @@ export async function toggleFavourite(code: string): Promise<string[]> {
   return next;
 }
 
+/* ----------------------------------- ads --------------------------------- */
+
+/**
+ * Selectors for Google's sponsored blocks — text ads and shopping/PLA units, desktop and mobile.
+ *
+ * Google's result markup is unstable, so this is a deliberately curated, best-effort list: it targets
+ * only containers that are unambiguously ads and avoids `#rhs` and generic result wrappers, so it can
+ * never hide organic results or the knowledge panel. It may need updating as Google renames things.
+ */
+export const AD_SELECTORS: readonly string[] = [
+  "#tads", // top text-ads block
+  "#tadsb", // bottom text-ads block (legacy id)
+  "#bottomads", // bottom text-ads block
+  "[data-text-ad]", // individual text-ad units
+  ".commercial-unit-desktop-top", // top shopping (PLA) unit
+  ".commercial-unit-desktop-rhs", // right-hand shopping unit
+  ".commercial-unit-mobile-top", // mobile shopping units
+  ".commercial-unit-mobile-bottom",
+];
+
+/** Marker class our stylesheet collapses; toggled on ad blocks so hiding never clobbers Google's styles. */
+const AD_HIDDEN_CLASS = "gco-ad-hidden";
+
+/** Whether ads should be hidden right now: only while an override is active and the option is on. */
+export function shouldHideAds(state: State): boolean {
+  return state.hideAds && state.override != null;
+}
+
+/**
+ * Collapse (`hide`) or reveal Google's sponsored blocks by toggling {@link AD_HIDDEN_CLASS} on them,
+ * returning the number of ad blocks matched when hiding. Reversible and idempotent, so it's safe to
+ * re-run on every DOM mutation as Google lazily injects ads after the initial page load.
+ */
+export function applyAdHiding(hide: boolean, doc: Document = document): number {
+  if (!hide) {
+    doc.querySelectorAll(`.${AD_HIDDEN_CLASS}`).forEach((el) => el.classList.remove(AD_HIDDEN_CLASS));
+    return 0;
+  }
+  const ads = doc.querySelectorAll(AD_SELECTORS.join(","));
+  ads.forEach((el) => el.classList.add(AD_HIDDEN_CLASS));
+  return ads.length;
+}
+
 /* --------------------------------- view ---------------------------------- */
 
 type Attrs = Record<string, string>;
@@ -188,11 +231,24 @@ export function buildWidget(state: State): HTMLElement {
     "aria-label": "Search countries",
   }) as HTMLInputElement;
   const list = h("div", { class: "gco-list", role: "listbox" });
-  const strictWrap = h("label", { class: "gco-strict" });
+  const strictWrap = h("label", { class: "gco-toggle gco-strict" });
   const strict = h("input", { type: "checkbox" }) as HTMLInputElement;
   strict.checked = Boolean(state.override?.strict);
   strictWrap.append(strict, document.createTextNode(" Strict — only pages from this country"));
-  panel.append(filter, list, strictWrap);
+
+  const adsWrap = h("label", { class: "gco-toggle gco-ads" });
+  const hideAds = h("input", { type: "checkbox" }) as HTMLInputElement;
+  hideAds.checked = state.hideAds;
+  adsWrap.append(hideAds, document.createTextNode(" Hide sponsored results while overriding"));
+  // Ads ignore the override, so this reflects immediately on the current page — no navigation needed.
+  // Persist the choice and re-apply against the live DOM (a no-op when in Auto, per shouldHideAds).
+  hideAds.addEventListener("change", () => {
+    state.hideAds = hideAds.checked;
+    void patchState({ hideAds: hideAds.checked });
+    applyAdHiding(shouldHideAds(state));
+  });
+
+  panel.append(filter, list, h("div", { class: "gco-toggles" }, strictWrap, adsWrap));
   root.append(pill, panel);
 
   renderList(list, state, "");
@@ -288,13 +344,21 @@ export async function runContentScript(): Promise<MutationObserver | undefined> 
   if (await enforceSticky()) return undefined; // a redirect is underway; the reloaded page will mount.
 
   const state = await getState();
+  // Read ad-hiding from `state` live (never snapshot it): the panel toggle mutates state.hideAds in
+  // place without a reload, and both the initial pass and the observer must honour the current value
+  // so late-loaded ads track the toggle both ways — stop hiding once it's turned off, start once on.
   const tryMount = () => {
-    if (document.body) mount(state);
+    if (document.body) {
+      mount(state);
+      applyAdHiding(shouldHideAds(state)); // reconcile ads already present in the initial markup
+    }
   };
 
   tryMount(); // in case the body already exists by the time storage resolved
   const observer = new MutationObserver(() => {
+    // Re-mount if Google dropped our root; otherwise re-hide, since ads are injected after load.
     if (!document.getElementById(ROOT_ID)) tryMount();
+    else if (shouldHideAds(state)) applyAdHiding(true);
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   return observer;

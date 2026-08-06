@@ -27,6 +27,7 @@ Features
 • Sticky — your choice carries across every search until you change it or pick "Auto (my location)".
 • Favourites — star the countries you use most and they stay pinned to the top.
 • Strict mode — optionally restrict results to pages from the selected country.
+• Hides mismatched ads — Google's sponsored results still target your real location, so they're hidden while a country is overridden (turn this off any time).
 • Light & dark — matches Google's own theme.
 • Private — no account, no tracking, nothing leaves your browser.
 

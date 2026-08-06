@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installChromeMock, stubLocation, tick, type ChromeMock, type LocationMock } from "./test-utils";
 import {
+  applyAdHiding,
   applyOverride,
   buildWidget,
   detectDark,
@@ -10,6 +11,7 @@ import {
   renderList,
   ROOT_ID,
   runContentScript,
+  shouldHideAds,
   toggleFavourite,
 } from "./content-core";
 import { defaultState, type State } from "./shared";
@@ -155,6 +157,7 @@ describe("buildWidget", () => {
       panel: root.querySelector<HTMLElement>(".gco-panel")!,
       filter: root.querySelector<HTMLInputElement>(".gco-filter")!,
       strict: root.querySelector<HTMLInputElement>(".gco-strict input")!,
+      hideAds: root.querySelector<HTMLInputElement>(".gco-ads input")!,
     };
   }
 
@@ -226,6 +229,51 @@ describe("buildWidget", () => {
     expect(loc.assign).not.toHaveBeenCalled();
     expect(root.querySelector('.gco-item[data-code="JP"] .gco-star.gco-fav')).toBeTruthy();
   });
+
+  it("reflects and toggles the hide-ads option, applying to the page without navigating", async () => {
+    const ad = document.createElement("div");
+    ad.id = "tads";
+    document.body.append(ad);
+    const { hideAds } = makeWidget({ override: { code: "JP", strict: false }, hideAds: false });
+    expect(hideAds.checked).toBe(false);
+
+    hideAds.checked = true;
+    hideAds.dispatchEvent(new Event("change", { bubbles: true }));
+    await tick();
+    expect(mock.store.hideAds).toBe(true);
+    expect(ad.classList.contains("gco-ad-hidden")).toBe(true);
+    expect(loc.assign).not.toHaveBeenCalled();
+  });
+});
+
+describe("shouldHideAds", () => {
+  it("hides only when the option is on and an override is active", () => {
+    expect(shouldHideAds(state({ override: { code: "jp", strict: false }, hideAds: true }))).toBe(true);
+    expect(shouldHideAds(state({ override: { code: "jp", strict: false }, hideAds: false }))).toBe(false);
+    expect(shouldHideAds(state({ override: null, hideAds: true }))).toBe(false);
+  });
+});
+
+describe("applyAdHiding", () => {
+  function seedAds() {
+    document.body.innerHTML =
+      '<div id="tads"></div><div data-text-ad></div>' +
+      '<div class="commercial-unit-desktop-top"></div><div id="organic">result</div>';
+  }
+
+  it("collapses ad blocks and leaves organic results untouched", () => {
+    seedAds();
+    expect(applyAdHiding(true)).toBe(3);
+    expect(document.querySelectorAll(".gco-ad-hidden")).toHaveLength(3);
+    expect(document.getElementById("organic")!.classList.contains("gco-ad-hidden")).toBe(false);
+  });
+
+  it("reveals previously hidden ads", () => {
+    seedAds();
+    applyAdHiding(true);
+    expect(applyAdHiding(false)).toBe(0);
+    expect(document.querySelectorAll(".gco-ad-hidden")).toHaveLength(0);
+  });
 });
 
 describe("detectDark", () => {
@@ -289,5 +337,66 @@ describe("runContentScript", () => {
     if (observer) observers.push(observer);
     expect(loc.replace).toHaveBeenCalledTimes(1);
     expect(document.getElementById(ROOT_ID)).toBeNull();
+  });
+
+  // href already satisfies the override, so enforceSticky is a no-op and we mount (and hide ads).
+  const SATISFIED = "https://www.google.com/search?q=coffee&gl=jp&hl=en";
+
+  it("hides ads on mount when an override is active and the option is on", async () => {
+    mock.store.override = { code: "jp", strict: false };
+    mock.store.lang = "en";
+    mock.store.hideAds = true;
+    loc.href = SATISFIED;
+    document.body.innerHTML = '<div id="tads"></div>';
+    const observer = await runContentScript();
+    if (observer) observers.push(observer);
+    await tick();
+    expect(document.getElementById("tads")!.classList.contains("gco-ad-hidden")).toBe(true);
+  });
+
+  it("re-hides ads injected after mount (Google lazy-loads them)", async () => {
+    mock.store.override = { code: "jp", strict: false };
+    mock.store.lang = "en";
+    loc.href = SATISFIED;
+    const observer = await runContentScript();
+    if (observer) observers.push(observer);
+    await tick();
+    const ad = document.createElement("div");
+    ad.id = "tads";
+    document.body.append(ad); // triggers the observer
+    await tick();
+    expect(ad.classList.contains("gco-ad-hidden")).toBe(true);
+  });
+
+  it("leaves ads visible when there is no override", async () => {
+    document.body.innerHTML = '<div id="tads"></div>';
+    const observer = await runContentScript();
+    if (observer) observers.push(observer);
+    await tick();
+    expect(document.getElementById("tads")!.classList.contains("gco-ad-hidden")).toBe(false);
+  });
+
+  it("stops re-hiding late-loaded ads once the toggle is turned off mid-page", async () => {
+    mock.store.override = { code: "jp", strict: false };
+    mock.store.lang = "en";
+    mock.store.hideAds = true;
+    loc.href = SATISFIED;
+    const observer = await runContentScript();
+    if (observer) observers.push(observer);
+    await tick();
+
+    // Turn hiding off via the panel toggle (no reload).
+    const toggle = document.querySelector<HTMLInputElement>(`#${ROOT_ID} .gco-ads input`)!;
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    await tick();
+
+    // An ad injected afterwards must stay visible — the observer must honour the live toggle, not a
+    // value snapshotted at load (regression: it used to re-hide with the stale captured value).
+    const ad = document.createElement("div");
+    ad.id = "tads";
+    document.body.append(ad);
+    await tick();
+    expect(ad.classList.contains("gco-ad-hidden")).toBe(false);
   });
 });

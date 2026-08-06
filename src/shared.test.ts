@@ -103,8 +103,8 @@ describe("misc", () => {
   it("primarySubtag lowercases and strips region", () => {
     expect(primarySubtag("EN-GB")).toBe("en");
   });
-  it("defaultState is Auto with no favourites and undetected language", () => {
-    expect(defaultState()).toEqual({ override: null, favourites: [], lang: "" });
+  it("defaultState is Auto with no favourites, undetected language, and ad-hiding on", () => {
+    expect(defaultState()).toEqual({ override: null, favourites: [], lang: "", hideAds: true });
   });
   it("derives match/host patterns from the domain list", () => {
     expect(GOOGLE_DOMAINS).toContain("google.com");

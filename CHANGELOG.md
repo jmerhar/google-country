@@ -8,6 +8,15 @@ Add an entry under a new `## [x.y.z]` heading **before** cutting a release — t
 publishes that section as the GitHub Release notes, and `make release` refuses to tag a version with
 no changelog entry.
 
+## [0.2.0] - 2026-08-06
+
+### Added
+- Sponsored results are now hidden while a country override is active. Google serves ads from your
+  real location regardless of `gl`/`cr`, so they'd otherwise stay in the wrong country; hiding them
+  keeps the page consistent with the chosen country. A **Hide sponsored results while overriding**
+  toggle in the panel turns it off (on by default), and it applies to the current page immediately
+  without a reload. No new permissions — the ad blocks are hidden in the content script.
+
 ## [0.1.6] - 2026-08-04
 
 ### Fixed

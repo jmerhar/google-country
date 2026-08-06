@@ -16,6 +16,9 @@ pin favourites to the top, and the choice sticks across searches until you chang
   subsequent search (sticky) until you pick another or choose **Auto (my location)**.
 - **Favourites** (starred countries) are pinned above the full country list.
 - A **Strict** toggle hard-restricts results to that country's pages.
+- **Sponsored results are hidden while a country is overridden** (Google serves ads from your real
+  location regardless of `gl`/`cr`, so they'd otherwise stay in the wrong country). Toggle it off in
+  the panel to show them.
 - **Your language never changes** when you switch country.
 
 ### How it maps to Google's URL parameters
@@ -66,6 +69,8 @@ isn't available, the extension falls back to enforcing the sticky country in the
 - Click the pill in the results header to open the panel.
 - Type to filter, click a country to search from there, or click the ★ to (un)favourite it.
 - Tick **Strict** to also restrict results to that country's pages (`cr`).
+- Untick **Hide sponsored results while overriding** if you'd rather see Google's ads (they reflect
+  your real location, not the overridden country).
 - Choose **Auto (my location)** to clear the override and return to your real location.
 
 > Note: flag emoji don't render on Windows Chrome — you'll see the two-letter code instead.

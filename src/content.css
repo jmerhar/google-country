@@ -141,15 +141,20 @@
 }
 .gco-star.gco-fav { color: #f9ab00; }
 
-.gco-strict {
+.gco-toggles { border-top: 1px solid var(--gco-border); }
+.gco-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-top: 1px solid var(--gco-border);
   color: var(--gco-muted);
   font-size: 13px;
+  cursor: pointer;
 }
+.gco-toggle + .gco-toggle { padding-top: 2px; } /* tighten the gap between stacked toggles */
+
+/* Collapse Google's sponsored blocks (applied by the content script under an active override). */
+.gco-ad-hidden { display: none !important; }
 
 /* Larger tap targets on touch/mobile (e.g. Kiwi on Android). */
 @media (pointer: coarse) {
