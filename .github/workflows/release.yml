@@ -16,9 +16,9 @@ jobs:
       CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
       CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -66,7 +66,7 @@ jobs:
           node scripts/pack-crx.mjs --key key.pem --url "$crx_url"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: RELEASE_NOTES.md
           # Only the versioned self-hosted crx is attached; cws-upload.crx is store-only, and this

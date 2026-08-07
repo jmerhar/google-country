@@ -18,14 +18,14 @@ jobs:
     env:
       COVERAGE_PAGES_TOKEN: ${{ secrets.COVERAGE_PAGES_TOKEN }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -45,7 +45,7 @@ jobs:
 
       # Informational, never fails the build.
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
@@ -64,7 +64,7 @@ jobs:
         run: scripts/collect-coverage.sh coverage-upload
       - name: Check out the coverage repo
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: jmerhar/coverage
           token: ${{ secrets.COVERAGE_PAGES_TOKEN }}
