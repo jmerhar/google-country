@@ -1,4 +1,4 @@
-# Codecov is informational only — the real gate is scripts/coverage-report.py --gate in CI.
+# Codecov is informational only — the real gate runs in CI, with its threshold in coverage.toml.
 # Uploads use the CODECOV_TOKEN repo secret (tokenless upload is unreliable for this repo).
 coverage:
   status:

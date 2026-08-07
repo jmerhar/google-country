@@ -6,7 +6,7 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      // json-summary drives scripts/coverage-report.py; lcov feeds Codecov + the published HTML.
+      // json-summary drives the coverage summary and gate; lcov feeds Codecov + the published HTML.
       reporter: ["text", "json-summary", "lcov", "html"],
       reportsDirectory: "coverage",
       include: ["src/**/*.ts"],
