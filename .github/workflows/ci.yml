@@ -16,9 +16,6 @@ jobs:
     permissions:
       contents: read
       statuses: write
-    # Exposed for the publish steps' `if:` guard so they skip (not fail) when the secret is absent.
-    env:
-      COVERAGE_PAGES_TOKEN: ${{ secrets.COVERAGE_PAGES_TOKEN }}
     steps:
       - uses: actions/checkout@v7
 
@@ -42,8 +39,9 @@ jobs:
       - name: Test with coverage
         run: npx vitest run --coverage
 
-      - name: Coverage summary
-        run: python3 scripts/coverage-report.py --format md >> "$GITHUB_STEP_SUMMARY"
+      # The suite, its label and its gate are declared in coverage.toml; the tooling behind this and
+      # the two coverage steps below is shared by every project publishing to the coverage site.
+      - uses: jmerhar/coverage/.github/actions/summary@v1
 
       # Informational, never fails the build.
       - name: Upload coverage to Codecov
@@ -53,40 +51,17 @@ jobs:
           files: coverage/lcov.info
           fail_ci_if_error: false
 
-      - name: Coverage gate
-        run: python3 scripts/coverage-report.py --gate
+      # Runs after the Codecov upload so coverage still lands when the gate fails, and before
+      # publishing so a regression never reaches the site.
+      - uses: jmerhar/coverage/.github/actions/gate@v1
 
       - name: Build extension
         run: npm run build
 
-      # Publish the HTML report to the shared jmerhar/coverage site — only on green pushes to main
-      # and only while the token exists.
-      - name: Collect coverage upload
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
-        run: scripts/collect-coverage.sh coverage-upload
-      - name: Check out the coverage repo
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
-        uses: actions/checkout@v7
+      # Publish the HTML report to the shared coverage site and link it from the commit. Only on
+      # green pushes to main; the action skips when the token is absent, so this stays green if the
+      # secret is ever missing.
+      - uses: jmerhar/coverage/.github/actions/publish@v1
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
-          repository: jmerhar/coverage
           token: ${{ secrets.COVERAGE_PAGES_TOKEN }}
-          path: coverage-repo
-      - name: Publish coverage report
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
-        run: |
-          coverage-repo/bin/add-report.sh \
-            --repo coverage-repo \
-            --project google-country \
-            --sha "$GITHUB_SHA" \
-            --message "$(git log -1 --pretty=%s)" \
-            --commit-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" \
-            --report-dir coverage-upload
-      - name: Link coverage report from the commit
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && env.COVERAGE_PAGES_TOKEN != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-            -f state=success -f context="coverage/report" \
-            -f description="HTML coverage report" \
-            -f target_url="https://jmerhar.github.io/coverage/google-country/$GITHUB_SHA/"

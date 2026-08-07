@@ -25,8 +25,16 @@ test: ## Run the unit test suite
 test-watch: ## Run the unit tests in watch mode
 	npm run test:watch
 
-coverage: ## Run tests with coverage and enforce the gate
-	npm run test:cov && python3 scripts/coverage-report.py --gate
+# The coverage summary and gate are shared tooling from jmerhar/coverage, configured by coverage.toml.
+# It is fetched on demand rather than vendored, so a local gate enforces exactly what CI does; delete
+# the file to pick up a newer version.
+COVERAGE_REPORT := .coverage-report.py
+
+$(COVERAGE_REPORT):
+	curl -fsSL -o $@ https://raw.githubusercontent.com/jmerhar/coverage/v1/bin/coverage-report.py
+
+coverage: $(COVERAGE_REPORT) ## Run tests with coverage and enforce the gate
+	npm run test:cov && python3 $(COVERAGE_REPORT) --gate
 
 check: lint test coverage ## Lint + test + coverage gate (gate a commit on this)
 
@@ -36,7 +44,7 @@ build: ## Bundle src/ into the loadable extension in dist/
 	npm run build
 
 clean: ## Remove build + coverage + package artifacts (all regenerable)
-	rm -rf dist coverage coverage-upload *.zip *.crx updates.xml
+	rm -rf dist coverage coverage-upload *.zip *.crx updates.xml $(COVERAGE_REPORT)
 
 ##@ Package
 

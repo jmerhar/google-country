@@ -1,0 +1,15 @@
+# Coverage configuration for the shared tooling in jmerhar/coverage, which renders the CI summary
+# table, enforces the gate, and publishes the HTML report to https://jmerhar.github.io/coverage/.
+#
+# One suite: the extension itself. Produce its report with `npx vitest run --coverage`, which writes
+# both the json-summary read here and the HTML directory that gets published.
+
+# The gate sits at the actual figure so a real regression fails CI while the odd defensive line is
+# tolerated. Raise it as coverage climbs; never lower it to make a red build pass.
+
+[suites.extension]
+label = "Extension (TypeScript)"
+format = "istanbul"
+report = "coverage/coverage-summary.json"
+html = "coverage"
+gate = 99.0
