@@ -93,8 +93,9 @@ and `version` are generated from `src/google-domains.json` and `package.json` so
 
 Vitest (+ `@vitest/coverage-v8`, jsdom). `make coverage` runs the suite and enforces the line-coverage
 gate declared in `coverage.toml`, using the shared tooling from `jmerhar/coverage` (fetched on demand
-so a local run gates exactly as CI does). CI additionally uploads to Codecov (informational) and, on
-green pushes to `main`, publishes the HTML report to that same shared site.
+so a local run gates exactly as CI does). CI additionally uploads coverage and
+test results to Codecov (informational — flake and failure history) and, on green pushes to `main`,
+publishes the HTML report to that same shared site.
 
 ## Releasing
 

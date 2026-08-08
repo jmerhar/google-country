@@ -4,6 +4,7 @@ site-dist/
 site/public/
 coverage/
 coverage-upload/
+junit/
 *.tsbuildinfo
 *.local
 .DS_Store

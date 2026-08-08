@@ -43,13 +43,14 @@ jobs:
       # the two coverage steps below is shared by every project publishing to the coverage site.
       - uses: jmerhar/coverage/.github/actions/summary@v1
 
-      # Informational, never fails the build.
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
+      # Informational, never fails the build. The coverage file is derived from coverage.toml; the
+      # JUnit report comes from the vitest reporter and gives Codecov flake and failure history.
+      # `!cancelled()` so a failing suite still reports its failures, which is the point of that.
+      - uses: jmerhar/coverage/.github/actions/codecov@v1
+        if: ${{ !cancelled() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage/lcov.info
-          fail_ci_if_error: false
+          junit: junit/vitest.xml
 
       # Runs after the Codecov upload so coverage still lands when the gate fails, and before
       # publishing so a regression never reaches the site.
