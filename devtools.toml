@@ -1,0 +1,42 @@
+# Shared build tooling from jmerhar/devtools, fetched into .devtools/ by scripts/devtools-fetch.sh.
+[fetch]
+ref = "v1"
+files = [
+  "make/devtools.mk",
+  "bin/ci.py",
+  "bin/pages-artifact.sh",
+  "bin/devtools-check.py",
+  "fetch/devtools-fetch.sh",
+]
+coverage = true
+
+# The vendored fetcher devtools-check compares with the one at the pinned ref.
+[check]
+fetcher = "scripts/devtools-fetch.sh"
+
+# CI, run by jmerhar/devtools' python-docker-app.yml (.github/workflows/ci.yml). Releases are
+# packaged and published by .github/workflows/release.yml.
+[ci]
+node = "22"
+junit = ["junit/vitest.xml"]
+coverage_description = "Extension HTML coverage report"
+github_release = false
+
+[[ci.suite]]
+name = "extension"
+node = true
+install = "npm ci"
+run = "npm run lint && npm run typecheck && npx vitest run --coverage && npm run build"
+coverage = ["coverage", "junit"]
+
+[[ci.suite]]
+name = "devtools"
+run = "python3 .devtools/bin/devtools-check.py"
+
+# .github/dependabot.yml, generated from these by `make devtools-fix`: GitHub Actions, then each
+# update below, every one grouped into a single weekly pull request that takes a release once it is
+# three days old.
+[[dependabot.update]]
+ecosystem = "npm"
+directory = "/"
+group = "npm"

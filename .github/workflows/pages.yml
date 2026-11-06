@@ -1,11 +1,8 @@
 name: Pages
 
-# Deploys the promotional site (home / privacy / support) to GitHub Pages, and bundles the latest
-# release's downloads (zip, crx, updates.xml) so the direct links + auto-update URL stay current.
-# Runs on content changes (push to main) and — crucially — after the Release workflow finishes, so
-# it picks up the just-published version. (A release created by GITHUB_TOKEN does not fire the
-# `release` event, so we depend on the Release run via workflow_run instead.) Pages source must be
-# "GitHub Actions".
+# The promo, privacy and support site, with the latest release's downloads (scripts/build-site.sh),
+# deployed by jmerhar/devtools' shared Pages workflow; again after each successful release, so the
+# downloads are current.
 on:
   push:
     branches: [main]
@@ -14,65 +11,20 @@ on:
     types: [completed]
   workflow_dispatch: {}
 
-# One concurrent deployment; let an in-progress run finish.
-concurrency:
-  group: pages
-  cancel-in-progress: false
+permissions:
+  contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    # On a Release-triggered run, only deploy if the release actually succeeded.
+  pages:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build site
-        run: npm run site
-
-      # Serve this version's release downloads from the site root under stable names, so the site can
-      # link them directly (versioned release-asset names have no stable "latest" URL).
-      #
-      # Download the release matching the checked-out version (v<package.json>), NOT GitHub's "latest"
-      # release: the latest-release flag can lag for minutes right after a release is created, so a
-      # workflow_run/dispatch firing in that window would otherwise bundle the *previous* version's
-      # downloads. Fall back to whatever "latest" resolves to only when this version has no release yet
-      # (e.g. the very first deploy, or a push landing before the Release workflow has published).
-      - name: Add release downloads (zip, crx, updates.xml)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          version="v$(node -p "require('./package.json').version")"
-          patterns=(--pattern '*.crx' --pattern '*.zip' --pattern 'updates.xml')
-          gh release download "$version" "${patterns[@]}" -D site-dist \
-            || gh release download "${patterns[@]}" -D site-dist \
-            || echo "no release assets yet"
-          for ext in crx zip; do
-            if ls site-dist/google-country-*.$ext >/dev/null 2>&1; then
-              mv site-dist/google-country-*.$ext site-dist/google-country.$ext
-            fi
-          done
-
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: site-dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
+    uses: jmerhar/devtools/.github/workflows/pages-deploy.yml@v1
+    with:
+      node: "22"
+      install: npm ci
+      build: scripts/build-site.sh
+      path: site-dist
+      fetcher: scripts/devtools-fetch.sh
     permissions:
+      contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5

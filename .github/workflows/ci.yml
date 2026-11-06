@@ -1,68 +1,25 @@
 name: CI
 
+# The suites in devtools.toml's [ci] section, run by jmerhar/devtools' shared workflow.
 on:
-  # push is limited to main because pull_request already covers branch work: triggering on both would
-  # run the whole suite twice for every pull request.
+  # push is limited to main because pull_request already covers branch work; triggering on both
+  # would run everything twice for every pull request.
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    # contents: read for checkout; statuses: write to link the published coverage report.
+  ci:
+    uses: jmerhar/devtools/.github/workflows/python-docker-app.yml@v1
+    with:
+      fetcher: scripts/devtools-fetch.sh
     permissions:
-      contents: read
+      contents: write
+      packages: write
       statuses: write
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint & type-check
-        run: |
-          npm run lint
-          npm run typecheck
-
-      - name: Test with coverage
-        run: npx vitest run --coverage
-
-      # The suite, its label and its gate are declared in coverage.toml; the tooling behind this and
-      # the two coverage steps below is shared by every project publishing to the coverage site.
-      - uses: jmerhar/coverage/.github/actions/summary@v1
-
-      # Informational, never fails the build. The coverage file is derived from coverage.toml; the
-      # JUnit report comes from the vitest reporter and gives Codecov flake and failure history.
-      # `!cancelled()` so a failing suite still reports its failures, which is the point of that.
-      - uses: jmerhar/coverage/.github/actions/codecov@v1
-        if: ${{ !cancelled() }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          junit: junit/vitest.xml
-
-      # Runs after the Codecov upload so coverage still lands when the gate fails, and before
-      # publishing so a regression never reaches the site.
-      - uses: jmerhar/coverage/.github/actions/gate@v1
-
-      - name: Build extension
-        run: npm run build
-
-      # Publish the HTML report to the shared coverage site and link it from the commit. Only on
-      # green pushes to main; the action skips when the token is absent, so this stays green if the
-      # secret is ever missing.
-      - uses: jmerhar/coverage/.github/actions/publish@v1
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        with:
-          token: ${{ secrets.COVERAGE_PAGES_TOKEN }}
+    secrets: inherit

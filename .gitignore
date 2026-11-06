@@ -9,8 +9,6 @@ junit/
 *.local
 .DS_Store
 
-# Shared coverage tooling, fetched on demand by `make coverage`.
-.coverage-report.py
 
 # IDE
 .idea/
