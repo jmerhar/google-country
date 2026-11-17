@@ -304,9 +304,9 @@ export function buildWidget(state: State): HTMLElement {
  */
 export function detectDark(doc: Document = document): boolean {
   const bg = getComputedStyle(doc.body ?? doc.documentElement).backgroundColor;
-  const m = bg.match(/rgba?\(([^)]+)\)/);
-  if (!m) return false;
-  const [r = 255, g = 255, b = 255, a = 1] = m[1].split(",").map((n) => parseFloat(n));
+  const channels = bg.match(/rgba?\(([^)]+)\)/)?.[1];
+  if (!channels) return false;
+  const [r = 255, g = 255, b = 255, a = 1] = channels.split(",").map((n) => parseFloat(n));
   if (a === 0) return globalThis.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
 }

@@ -11,5 +11,5 @@
 label = "Extension (TypeScript)"
 format = "istanbul"
 report = "coverage/coverage-summary.json"
-html = "coverage"
+html = "coverage/html"
 gate = 99.0
