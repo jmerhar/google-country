@@ -34,12 +34,9 @@ name = "devtools"
 run = "python3 .devtools/bin/devtools-check.py"
 
 # .github/dependabot.yml, generated from these by `make devtools-fix`: GitHub Actions, then each
-# update below, every one grouped into a single weekly pull request that takes a release once it is
-# three days old.
+# update below. Each takes a release once it is three days old, in one weekly pull request of minor
+# and patch releases and another of majors, which waits for a hand migration.
 [[dependabot.update]]
 ecosystem = "npm"
 directory = "/"
 group = "npm"
-comment = """typescript-eslint names the TypeScript versions it supports as a peer dependency, so a
-new major cannot install until it accepts it; move both by hand then."""
-ignore = [{ dependency = "typescript", update_types = ["version-update:semver-major"] }]
