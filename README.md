@@ -78,7 +78,7 @@ isn't available, the extension falls back to enforcing the sticky country in the
 ## Development
 
 ```
-make install     # install dependencies
+make install     # install dependencies from the lockfile
 make dev         # rebuild dist/ on change; reload the unpacked extension after changes
 make check       # lint + type-check + tests + coverage gate (run before committing)
 make build       # bundle src/ into dist/

@@ -1,7 +1,7 @@
 .PHONY: install dev lint test test-watch coverage check build clean zip crx keygen icons store-assets site cws-publish release
 
-# help, devtools-update, coverage-tooling and devtools-check come from jmerhar/devtools; make
-# fetches them on the first run and whenever devtools.toml changes.
+# help, devtools-update, coverage-tooling, devtools-check, node-modules and lockfile come from
+# jmerhar/devtools; make fetches them on the first run and whenever devtools.toml changes.
 .DEFAULT_GOAL := help
 DEVTOOLS_FETCH := scripts/devtools-fetch.sh
 include .devtools/make/devtools.mk
@@ -10,8 +10,8 @@ include .devtools/make/devtools.mk
 
 ##@ Setup
 
-install: ## Install dependencies (npm ci when a lockfile exists, else npm install)
-	@if [ -f package-lock.json ]; then npm ci; else npm install; fi
+install: ## Install the dependencies from the lockfile
+	$(MAKE) node-modules
 
 ##@ Dev
 

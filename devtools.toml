@@ -7,8 +7,16 @@ files = [
   "bin/pages-artifact.sh",
   "bin/devtools-check.py",
   "fetch/devtools-fetch.sh",
+  "make/npm.mk",
+  "bin/npm-ci.sh",
+  "bin/lockfile.sh",
+  "bin/check-lockfile.sh",
 ]
 coverage = true
+
+# The extension and its site, whose lockfile resolves only to the public registry (`make lockfile`).
+[npm]
+dirs = ["."]
 
 # The vendored fetcher devtools-check compares with the one at the pinned ref.
 [check]
